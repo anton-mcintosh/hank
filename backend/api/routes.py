@@ -14,11 +14,13 @@ import os
 import aiofiles
 from sqlalchemy.orm import Session
 
-from api.models import WorkOrder, WorkOrderCreate, WorkOrderUpdate
+from api.models import VehicleInfo, WorkOrder, WorkOrderCreate, WorkOrderUpdate
 from services.audio import transcribe_audio
 from services.image import extract_vin_from_image, read_odometer_image
 from services.generate import generate_work_summary
+from services.vehicle_info import get_year_make_model
 from database.db import get_db, WorkOrderRepository
+
 
 
 def setup_routes(app, UPLOAD_DIR, OPENAI_API_KEY):
@@ -136,6 +138,9 @@ def setup_routes(app, UPLOAD_DIR, OPENAI_API_KEY):
                 vin = await extract_vin_from_image(vin_path)
                 if vin:
                     vehicle_info["vin"] = vin
+                    VehicleInfo.vin = vin
+                    vehicle_info.update(await get_year_make_model(vin))
+                    print("Vehicle Info with vin:", vehicle_info)
 
         # Similar changes for odometer and audio files...          # Process odometer image
             if odometer_content:
@@ -148,6 +153,8 @@ def setup_routes(app, UPLOAD_DIR, OPENAI_API_KEY):
             # Update work order with vehicle info
             if odo:
                 vehicle_info["odometer"] = odo
+                VehicleInfo.mileage = odo
+                print("Vehicle Info with odometer:", vehicle_info)
 
             all_transcripts = []
 
@@ -195,6 +202,7 @@ def setup_routes(app, UPLOAD_DIR, OPENAI_API_KEY):
 
                 # Update work order with summary data
                 update_data.update({
+                    "vehicle_info": vehicle_info,
                     "work_summary": summary_data.get("work_summary", ""),
                     "line_items": summary_data.get("line_items", []),
                     "total_parts": summary_data.get("total_parts", 0),

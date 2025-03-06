@@ -7,8 +7,6 @@ from dotenv import load_dotenv, dotenv_values
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-# OPENAI_API_KEY="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"
-# VISION_API_KEY="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"
 VISION_API_KEY = os.getenv("OPENAI_API_KEY")
 
 print("Api key", OPENAI_API_KEY)
