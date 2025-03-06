@@ -1,8 +1,17 @@
 import httpx
 import json
 import os
+import base64
+from dotenv import load_dotenv, dotenv_values
+
+load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# OPENAI_API_KEY="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"
+# VISION_API_KEY="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"
+VISION_API_KEY = os.getenv("OPENAI_API_KEY")
+
+print("Api key", OPENAI_API_KEY)
 
 async def extract_vin_from_image(file_path):
     """Extract VIN from door placard image using Vision API"""
@@ -17,7 +26,7 @@ async def extract_vin_from_image(file_path):
                 "Authorization": f"Bearer {VISION_API_KEY}"
             }
             payload = {
-                "model": "gpt-4-vision-preview",
+                "model": "gpt-4o",
                 "messages": [
                     {
                         "role": "user",
@@ -38,10 +47,12 @@ async def extract_vin_from_image(file_path):
             
             if response.status_code == 200:
                 vin_text = response.json()["choices"][0]["message"]["content"].strip()
+                print("VIN text:", vin_text)
                 # Typical VIN is 17 alphanumeric characters
                 # Extract just the VIN using simple validation
                 import re
                 vin_match = re.search(r'[A-HJ-NPR-Z0-9]{17}', vin_text)
+                print("VIN match:", vin_match)
                 if vin_match:
                     return vin_match.group(0)
                 return vin_text
@@ -65,7 +76,7 @@ async def read_odometer_image(file_path):
                 "Authorization": f"Bearer {VISION_API_KEY}"
             }
             payload = {
-                "model": "gpt-4-vision-preview",
+                "model": "gpt-4o",
                 "messages": [
                     {
                         "role": "user",
@@ -86,9 +97,11 @@ async def read_odometer_image(file_path):
             
             if response.status_code == 200:
                 mileage_text = response.json()["choices"][0]["message"]["content"].strip()
+                print("Mileage text:", mileage_text)
                 # Try to extract just the number
                 import re
                 mileage_match = re.search(r'[0-9,]+', mileage_text)
+                print("Mileage match:", mileage_match)
                 if mileage_match:
                     # Remove commas and convert to integer
                     return mileage_match.group(0).replace(',', '')

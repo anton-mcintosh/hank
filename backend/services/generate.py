@@ -1,6 +1,9 @@
 import httpx
 import json
 import os
+from dotenv import load_dotenv, dotenv_values
+
+load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -13,7 +16,6 @@ async def generate_work_summary(transcript, vehicle_info):
                 "Authorization": f"Bearer {OPENAI_API_KEY}"
             }
             
-            # Prepare context with vehicle info
             vehicle_context = ""
             if vehicle_info:
                 vehicle_context = f"Vehicle information: VIN {vehicle_info.get('vin', 'unknown')}, Mileage: {vehicle_info.get('mileage', 'unknown')}"
@@ -43,7 +45,7 @@ async def generate_work_summary(transcript, vehicle_info):
             """
             
             payload = {
-                "model": "gpt-4-turbo",
+                "model": "gpt-4o",
                 "messages": [
                     {"role": "system", "content": "You are an expert auto repair service writer who converts technician notes into professional work orders."},
                     {"role": "user", "content": prompt}

@@ -51,9 +51,41 @@ def setup_routes(app, UPLOAD_DIR, OPENAI_API_KEY):
             # Save work order to database
             WorkOrderRepository.create(db, work_order_data)
 
-            # Process uploads in background
+            # Read file contents before they get closed
+            audio_contents = []
+            audio_filenames = []
+            if audio_files:
+                for audio_file in audio_files:
+                    if audio_file:
+                        content = await audio_file.read()
+                        audio_contents.append(content)
+                        audio_filenames.append(audio_file.filename)
+                    else:
+                        audio_contents.append(None)
+                        audio_filenames.append(None)
+
+            vin_content = None
+            vin_filename = None
+            if vin_image:
+                vin_content = await vin_image.read()
+                vin_filename = vin_image.filename
+
+            odometer_content = None
+            odometer_filename = None
+            if odometer_image:
+                odometer_content = await odometer_image.read()
+                odometer_filename = odometer_image.filename
+
+            # Process uploads in background with file contents instead of file objects
             background_tasks.add_task(
-                process_uploads, order_id, audio_files, vin_image, odometer_image
+                process_uploads, 
+                order_id, 
+                audio_contents, 
+                audio_filenames,
+                vin_content, 
+                vin_filename,
+                odometer_content, 
+                odometer_filename
             )
 
             return {
@@ -63,8 +95,16 @@ def setup_routes(app, UPLOAD_DIR, OPENAI_API_KEY):
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def process_uploads(order_id, audio_files, vin_image, odometer_image):
-        """Process uploaded files and update work order"""
+    async def process_uploads(
+    order_id, 
+    audio_contents, 
+    audio_filenames,
+    vin_content, 
+    vin_filename,
+    odometer_content, 
+    odometer_filename
+    ):
+        """Process uploaded file contents and update work order"""
         try:
             # Create a new database session for background task
             db = next(get_db())
@@ -77,74 +117,74 @@ def setup_routes(app, UPLOAD_DIR, OPENAI_API_KEY):
 
             # Process vehicle information images
             vehicle_info = {}
+            update_data = {}
 
             # Process VIN image
-            if vin_image:
+            if vin_content:
                 # Ensure directory exists
                 os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
 
                 vin_path = os.path.join(
                     UPLOAD_DIR,
                     "images",
-                    f"{order_id}_vin{os.path.splitext(vin_image.filename)[1]}",
+                    f"{order_id}_vin{os.path.splitext(vin_filename)[1]}",
                 )
                 print("Getting vin image")
                 async with aiofiles.open(vin_path, "wb") as f:
-                    content = await vin_image.read()
-                    await f.write(content)
+                    await f.write(vin_content)
 
                 vin = await extract_vin_from_image(vin_path)
                 if vin:
                     vehicle_info["vin"] = vin
 
-            # Process odometer image
-            if odometer_image:
+        # Similar changes for odometer and audio files...          # Process odometer image
+            if odometer_content:
                 os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
-
-                content = await odometer_image.read()
-
-                odometer_path = os.path.join(
-                    UPLOAD_DIR,
-                    "images",
-                    f"{order_id}_odometer{os.path.splitext(odometer_image.filename)[1]}",
-                )
-                async with aiofiles.open(odometer_path, "wb") as f:
-                    content = await odometer_image.read()
-                    await f.write(content)
-
-                mileage = await read_odometer_image(odometer_path)
-                if mileage:
-                    vehicle_info["mileage"] = mileage
-
+                odo_path = os.path.join(UPLOAD_DIR, "images", f"{order_id}_odo{os.path.splitext(odometer_filename)[1]}")
+                print("Getting odometer image")
+                async with aiofiles.open(odo_path, "wb") as f:
+                    await f.write(odometer_content)
+                odo = await read_odometer_image(odo_path)
             # Update work order with vehicle info
-            update_data = {"vehicle_info": vehicle_info}
+            if odo:
+                vehicle_info["odometer"] = odo
 
-            # Process audio files
             all_transcripts = []
 
-            if audio_files:
+            if audio_contents:
+                # Create audio directory if it doesn't exist
                 os.makedirs(os.path.join(UPLOAD_DIR, "audio"), exist_ok=True)
-
-                for i, audio_file in enumerate(audio_files):
+                
+                for i, (audio_content, audio_filename) in enumerate(zip(audio_contents, audio_filenames)):
                     # Skip if None
-                    if audio_file is None:
+                    if audio_content is None or audio_filename is None:
                         continue
-                    content = await audio_file.read()
 
-                    # Save audio file
-                    audio_path = os.path.join(
-                        UPLOAD_DIR,
-                        "audio",
-                        f"{order_id}_{i}{os.path.splitext(audio_file.filename)[1]}",
-                    )
-                    async with aiofiles.open(audio_path, "wb") as f:
-                        content = await audio_file.read()
-                        await f.write(content)
-
-                    # Transcribe audio
-                    transcript = await transcribe_audio(audio_path, OPENAI_API_KEY)
-                    if transcript:
-                        all_transcripts.append(transcript)
+                    try:
+                        # Get file extension from the original filename
+                        _, ext = os.path.splitext(audio_filename)
+                        
+                        # Create the file path with proper extension
+                        audio_path = os.path.join(
+                            UPLOAD_DIR,
+                            "audio",
+                            f"{order_id}_{i}{ext}",
+                        )
+                        
+                        # Write the content to disk using aiofiles
+                        print(f"Writing audio file {i}")
+                        async with aiofiles.open(audio_path, "wb") as f:
+                            await f.write(audio_content)
+                        
+                        # Now process the file on disk
+                        if os.path.exists(audio_path) and os.path.getsize(audio_path) > 0:
+                            transcript = await transcribe_audio(audio_path, OPENAI_API_KEY)
+                            if transcript:
+                                all_transcripts.append(transcript)
+                        else:
+                            print(f"Audio file not saved properly: {audio_path}")
+                    except Exception as e:
+                        print(f"Error processing audio file {i}: {e}")
 
             # Generate work summary if transcripts available
             if all_transcripts:
@@ -154,29 +194,34 @@ def setup_routes(app, UPLOAD_DIR, OPENAI_API_KEY):
                 )
 
                 # Update work order with summary data
-                update_data.update(
-                    {
-                        "work_summary": summary_data.get("work_summary", ""),
-                        "line_items": summary_data.get("line_items", []),
-                        "total_parts": summary_data.get("total_parts", 0),
-                        "total_labor": summary_data.get("total_labor", 0),
-                        "total": summary_data.get("total", 0),
-                        "status": "processed",
-                    }
-                )
+                update_data.update({
+                    "work_summary": summary_data.get("work_summary", ""),
+                    "line_items": summary_data.get("line_items", []),
+                    "total_parts": summary_data.get("total_parts", 0),
+                    "total_labor": summary_data.get("total_labor", 0),
+                    "total": summary_data.get("total", 0),
+                    "status": "processed",
+                })
+            else:
+                # If we have vehicle info but no transcripts, still mark as processed
+                if vehicle_info:
+                    update_data["status"] = "processed"
 
             # Update work order in database
-            WorkOrderRepository.update(db, order_id, update_data)
+            if update_data:
+                WorkOrderRepository.update(db, order_id, update_data)
 
         except Exception as e:
             print(f"Error processing uploads: {e}")
             # Update work order status to error
-            try:
-                WorkOrderRepository.update(db, order_id, {"status": "error"})
-            except Exception as update_error:
-                print(f"Error updating work order status: {update_error}")
+            if db:
+                try:
+                    WorkOrderRepository.update(db, order_id, {"status": "error"})
+                except Exception as update_error:
+                    print(f"Error updating work order status: {update_error}")
         finally:
-            db.close()
+            if db:
+                db.close()
 
     @app.get("/work-orders/{order_id}", response_model=WorkOrder)
     async def get_work_order(order_id: str, db: Session = Depends(get_db)):

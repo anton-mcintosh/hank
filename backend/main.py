@@ -5,6 +5,9 @@ import uvicorn
 
 from api.routes import setup_routes
 from database.db import init_db
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
