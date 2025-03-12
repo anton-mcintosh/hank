@@ -13,6 +13,36 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+class CustomerDB(base):
+    __tablename__ = "customers"
+
+    id = Column(String, primary_key=True, index=True)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    phone = Column(String, nullable=False)
+    address = Column(String, nullable=False)
+    vehicles = Column(JSON, default=[])
+    created_at = Column(TIMESTAMP, default=datetime.now)
+    updated_at = Column(TIMESTAMP, default=datetime.now)
+
+class CustomerRepository:
+    @staticmethod
+    def create(db, customer_data):
+        customer_db = CustomerDB(**customer_data)
+        db.add(customer_db)
+        db.commit()
+        db.refresh(customer_db)
+        return customer_db
+
+    @staticmethod
+    def get_by_id(db, customer_id):
+        return db.query(CustomerDB).filter(CustomerDB.id == customer_id).first()
+
+    @staticmethod
+    def get_all(db):
+        return db.query(CustomerDB).all()
+
 # Define WorkOrder model for database
 class WorkOrderDB(Base):
     __tablename__ = "work_orders"

@@ -2,6 +2,11 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from datetime import datetime
 
+class CustomerInfo(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    vehicles: Optional[List[Dict[str, Any]]] = None
 
 class VehicleInfo(BaseModel):
     vin: Optional[str] = None
