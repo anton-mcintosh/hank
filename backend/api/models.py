@@ -1,21 +1,70 @@
 from typing import List, Dict, Any, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
-class CustomerInfo(BaseModel):
-    name: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    vehicles: Optional[List[Dict[str, Any]]] = None
+class CustomerBase(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    phone: str
+    address: str
 
-class VehicleInfo(BaseModel):
+class CustomerCreate(CustomerBase):
+    pass
+
+class CustomerUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+    # what is this?
+    class Config:
+        extra = "ignore"
+
+class Customer(CustomerBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+# ------ Vehicle Models ------
+class VehicleBase(BaseModel):
+    customer_id: str
     vin: Optional[str] = None
     year: Optional[int] = None
     make: Optional[str] = None
     model: Optional[str] = None
     mileage: Optional[int] = None
 
+class VehicleCreate(VehicleBase):
+    pass
 
+class VehicleUpdate(BaseModel):
+    customer_id: Optional[str] = None
+    vin: Optional[str] = None
+    year: Optional[int] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
+    mileage: Optional[int] = None
+
+    class Config:
+        extra = "ignore"
+
+class Vehicle(VehicleBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+# ------ Line Item Model ------
 class LineItem(BaseModel):
     description: str
     type: str  # "part" or "labor"
@@ -23,10 +72,10 @@ class LineItem(BaseModel):
     unit_price: float
     total: float
 
-
+# ------ Work Order Models ------
 class WorkOrderBase(BaseModel):
-    customer_name: Optional[str] = None
-    vehicle_info: Dict[str, Any] = {}
+    customer_id: Optional[str] = None
+    vehicle_id: Optional[str] = None
     work_summary: str = ""
     line_items: List[Dict[str, Any]] = []
     total_parts: float = 0
@@ -34,14 +83,13 @@ class WorkOrderBase(BaseModel):
     total: float = 0
     status: str = "draft"
 
-
+# what is this?
 class WorkOrderCreate(WorkOrderBase):
     pass
 
-
-class WorkOrderUpdate(WorkOrderBase):
-    customer_name: Optional[str] = None
-    vehicle_info: Optional[Dict[str, Any]] = None
+class WorkOrderUpdate(BaseModel):
+    customer_id: Optional[str] = None
+    vehicle_id: Optional[str] = None
     work_summary: Optional[str] = None
     line_items: Optional[List[Dict[str, Any]]] = None
     total_parts: Optional[float] = None
@@ -50,9 +98,7 @@ class WorkOrderUpdate(WorkOrderBase):
     status: Optional[str] = None
 
     class Config:
-        # This allows partial updates
         extra = "ignore"
-
 
 class WorkOrder(WorkOrderBase):
     id: str
@@ -61,5 +107,4 @@ class WorkOrder(WorkOrderBase):
 
     class Config:
         from_attributes = True
-        # Convert datetime to string for JSON serialization
         json_encoders = {datetime: lambda dt: dt.isoformat()}

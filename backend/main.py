@@ -3,7 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from api.routes import setup_routes
+from api.workorder_routes import router as workorder_router
+from api.customer_routes import router as customer_router
+from api.vehicle_routes import router as vehicle_router
 from database.db import init_db
 from dotenv import load_dotenv
 
@@ -32,7 +34,9 @@ app.add_middleware(
 # Initialize database
 init_db()
 
-setup_routes(app, UPLOAD_DIR, OPENAI_API_KEY)
+app.include_router(workorder_router, prefix="/api/v1", tags=["work orders"])
+app.include_router(customer_router, prefix="/api/v1", tags=["customers"])
+app.include_router(vehicle_router, prefix="/api/v1", tags=["vehicles"])
 
 
 @app.get("/")

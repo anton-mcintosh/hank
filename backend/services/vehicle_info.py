@@ -1,7 +1,7 @@
-from api.models import VehicleInfo
+from api.models import VehicleBase
 from .vin_decoder import get_vehicle_info
 
-async def get_year_make_model(vin: str) -> VehicleInfo:
+async def get_year_make_model(vin: str) -> VehicleBase:
     """Get year, make, and model from VIN"""
     response = await get_vehicle_info(vin)
     

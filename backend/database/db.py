@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, Column, String, Float, JSON, TIMESTAMP, MetaData
+from sqlalchemy import create_engine, Column, String, Float, JSON, TIMESTAMP, MetaData, ForeignKey, Integer
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import os
 
@@ -13,7 +13,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-class CustomerDB(base):
+class CustomerDB(Base):
     __tablename__ = "customers"
 
     id = Column(String, primary_key=True, index=True)
@@ -26,24 +26,21 @@ class CustomerDB(base):
     created_at = Column(TIMESTAMP, default=datetime.now)
     updated_at = Column(TIMESTAMP, default=datetime.now)
 
-class CustomerRepository:
-    @staticmethod
-    def create(db, customer_data):
-        customer_db = CustomerDB(**customer_data)
-        db.add(customer_db)
-        db.commit()
-        db.refresh(customer_db)
-        return customer_db
 
-    @staticmethod
-    def get_by_id(db, customer_id):
-        return db.query(CustomerDB).filter(CustomerDB.id == customer_id).first()
+class VehicleDB(Base):
+    __tablename__ = "vehicles"
 
-    @staticmethod
-    def get_all(db):
-        return db.query(CustomerDB).all()
+    id = Column(String, primary_key=True, index=True)
+    customer_id = Column(String, ForeignKey("customers.id"))
+    vin = Column(String, index=True, nullable=True)
+    year = Column(Integer, nullable=True)
+    make = Column(String, nullable=True)
+    model = Column(String, nullable=True)
+    mileage = Column(Integer, nullable=True)
+    created_at = Column(TIMESTAMP, default=datetime.now)
+    updated_at = Column(TIMESTAMP, default=datetime.now)
 
-# Define WorkOrder model for database
+
 class WorkOrderDB(Base):
     __tablename__ = "work_orders"
 
@@ -72,46 +69,4 @@ def get_db():
         db.close()
 
 # WorkOrder CRUD operations
-class WorkOrderRepository:
-    @staticmethod
-    def create(db, work_order_data):
-        work_order_db = WorkOrderDB(**work_order_data)
-        db.add(work_order_db)
-        db.commit()
-        db.refresh(work_order_db)
-        return work_order_db
 
-    @staticmethod
-    def get_by_id(db, order_id):
-        return db.query(WorkOrderDB).filter(WorkOrderDB.id == order_id).first()
-
-    @staticmethod
-    def get_all(db):
-        return db.query(WorkOrderDB).all()
-
-    @staticmethod
-    def update(db, order_id, work_order_data):
-        work_order = db.query(WorkOrderDB).filter(WorkOrderDB.id == order_id).first()
-        if not work_order:
-            return None
-        
-        # Update fields
-        for key, value in work_order_data.items():
-            setattr(work_order, key, value)
-        
-        # Always update the updated_at timestamp
-        work_order.updated_at = datetime.now()
-        
-        db.commit()
-        db.refresh(work_order)
-        return work_order
-
-    @staticmethod
-    def delete(db, order_id):
-        work_order = db.query(WorkOrderDB).filter(WorkOrderDB.id == order_id).first()
-        if not work_order:
-            return False
-        
-        db.delete(work_order)
-        db.commit()
-        return True
