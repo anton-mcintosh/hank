@@ -7,14 +7,15 @@ from fastapi import (
     HTTPException,
     UploadFile,
 )
-from typing import List, Optional
+from typing import List, Dict, Any, Optional
 import uuid
+from pydantic import BaseModel
 from datetime import datetime
 import os
 import aiofiles
 from sqlalchemy.orm import Session
 
-from api.models import WorkOrder, WorkOrderCreate, WorkOrderUpdate
+from api.models import WorkOrder, Customer, Vehicle, WorkOrderUpdate
 from services.audio import transcribe_audio
 from services.image import extract_vin_from_image, read_odometer_image
 from services.generate import generate_work_summary
@@ -23,6 +24,29 @@ from database.repos import WorkOrderRepository, CustomerRepository, VehicleRepos
 from database.db import get_db
 
 router = APIRouter()
+
+
+class WorkOrderWithRelations(BaseModel):
+    """Extended work order model that includes related customer and vehicle data"""
+
+    id: str
+    customer_id: str = None
+    vehicle_id: str = None
+    work_summary: str = ""
+    line_items: List[Dict[str, Any]] = []
+    total_parts: float = 0
+    total_labor: float = 0
+    total: float = 0
+    status: str = "draft"
+    created_at: datetime
+    updated_at: datetime
+    customer: Customer = None
+    vehicle: Vehicle = None
+
+    class Config:
+        from_attributes = True
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
 
 @router.post("/work-orders/create", response_model=dict)
 async def create_work_order(
@@ -52,22 +76,24 @@ async def create_work_order(
             "updated_at": timestamp,
             "status": "pending",
         }
-        
+
         # If customer ID provided, verify customer exists
         if customer_id:
             customer = CustomerRepository.get_by_id(db, customer_id)
             if not customer:
                 raise HTTPException(status_code=404, detail="Customer not found")
             work_order_data["customer_id"] = customer_id
-            work_order_data["customer_name"] = f"{customer.first_name} {customer.last_name}"
-        
+            work_order_data["customer_name"] = (
+                f"{customer.first_name} {customer.last_name}"
+            )
+
         # If vehicle ID provided, verify vehicle exists
         if vehicle_id:
             vehicle = VehicleRepository.get_by_id(db, vehicle_id)
             if not vehicle:
                 raise HTTPException(status_code=404, detail="Vehicle not found")
             work_order_data["vehicle_id"] = vehicle_id
-        
+
         # Save work order to database
         WorkOrderRepository.create(db, work_order_data)
 
@@ -98,20 +124,20 @@ async def create_work_order(
 
         # Process uploads in background with file contents instead of file objects
         background_tasks.add_task(
-            process_uploads, 
-            order_id, 
-            audio_contents, 
+            process_uploads,
+            order_id,
+            audio_contents,
             audio_filenames,
-            vin_content, 
+            vin_content,
             vin_filename,
-            odometer_content, 
+            odometer_content,
             odometer_filename,
             customer_id,
             customer_name,
             customer_phone,
             customer_email,
             UPLOAD_DIR,
-            OPENAI_API_KEY
+            OPENAI_API_KEY,
         )
 
         return {
@@ -121,20 +147,21 @@ async def create_work_order(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 async def process_uploads(
-    order_id, 
-    audio_contents, 
+    order_id,
+    audio_contents,
     audio_filenames,
-    vin_content, 
+    vin_content,
     vin_filename,
-    odometer_content, 
+    odometer_content,
     odometer_filename,
     customer_id,
     customer_name,
     customer_phone,
     customer_email,
     UPLOAD_DIR,
-    OPENAI_API_KEY
+    OPENAI_API_KEY,
 ):
     """Process uploaded file contents and update work order"""
     try:
@@ -176,7 +203,11 @@ async def process_uploads(
         odometer = None
         if odometer_content:
             os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
-            odo_path = os.path.join(UPLOAD_DIR, "images", f"{order_id}_odo{os.path.splitext(odometer_filename)[1]}")
+            odo_path = os.path.join(
+                UPLOAD_DIR,
+                "images",
+                f"{order_id}_odo{os.path.splitext(odometer_filename)[1]}",
+            )
             print("Getting odometer image")
             async with aiofiles.open(odo_path, "wb") as f:
                 await f.write(odometer_content)
@@ -188,21 +219,26 @@ async def process_uploads(
         # Process customer info if we have it
         if not customer_id and (customer_name or customer_phone or customer_email):
             # Try to find existing customer by phone or email
+            print("Looking for existing customer")
             customer = None
             if customer_phone:
                 customer = CustomerRepository.get_by_phone(db, customer_phone)
             if not customer and customer_email:
                 customer = CustomerRepository.get_by_email(db, customer_email)
-                
+
             if customer:
                 # Use existing customer
-                customer_id = customer.id
+                print(f"Found existing customer: {customer}")
+                if customer.id is None:
+                    id = str(uuid.uuid4())
+                    customer = CustomerRepository.update(db, id, {"id": id})
+                    customer_id = customer.id
             elif customer_name:
                 # Create new customer if we have at least a name
                 name_parts = customer_name.split(maxsplit=1)
                 first_name = name_parts[0]
                 last_name = name_parts[1] if len(name_parts) > 1 else ""
-                
+
                 customer_data = {
                     "id": str(uuid.uuid4()),
                     "first_name": first_name,
@@ -211,20 +247,23 @@ async def process_uploads(
                     "phone": customer_phone or "",
                     "address": "",  # Default empty address
                 }
-                
+
                 customer = CustomerRepository.create(db, customer_data)
                 customer_id = customer.id
-        
+                print(f"Created new customer: {customer}")
+
         # Process vehicle info if we have it
         vehicle_id = work_order.vehicle_id
         if not vehicle_id and vin and customer_id:
             # Check if this VIN is already in our database
+            print("Searching for existing vehicle")
             existing_vehicle = VehicleRepository.get_by_vin(db, vin)
-            
+
             if existing_vehicle:
+                print(f"Found existing vehicle: {existing_vehicle}")
                 # Use existing vehicle
                 vehicle_id = existing_vehicle.id
-                
+
                 # Update vehicle with new odometer reading if it's higher
                 if odometer and int(odometer) > (existing_vehicle.mileage or 0):
                     VehicleRepository.update(db, vehicle_id, {"mileage": int(odometer)})
@@ -239,10 +278,11 @@ async def process_uploads(
                     "model": vehicle_info.get("model"),
                     "mileage": odometer,
                 }
-                
+
                 new_vehicle = VehicleRepository.create(db, vehicle_data)
                 vehicle_id = new_vehicle.id
-        
+                print(f"Created new vehicle: {new_vehicle}")
+
         # Update work order with customer and vehicle IDs
         if customer_id or vehicle_id:
             update_fields = {}
@@ -250,7 +290,7 @@ async def process_uploads(
                 update_fields["customer_id"] = customer_id
             if vehicle_id:
                 update_fields["vehicle_id"] = vehicle_id
-                
+
             WorkOrderRepository.update(db, order_id, update_fields)
 
         # Process audio files
@@ -258,8 +298,10 @@ async def process_uploads(
         if audio_contents:
             # Create audio directory if it doesn't exist
             os.makedirs(os.path.join(UPLOAD_DIR, "audio"), exist_ok=True)
-            
-            for i, (audio_content, audio_filename) in enumerate(zip(audio_contents, audio_filenames)):
+
+            for i, (audio_content, audio_filename) in enumerate(
+                zip(audio_contents, audio_filenames)
+            ):
                 # Skip if None
                 if audio_content is None or audio_filename is None:
                     continue
@@ -267,19 +309,19 @@ async def process_uploads(
                 try:
                     # Get file extension from the original filename
                     _, ext = os.path.splitext(audio_filename)
-                    
+
                     # Create the file path with proper extension
                     audio_path = os.path.join(
                         UPLOAD_DIR,
                         "audio",
                         f"{order_id}_{i}{ext}",
                     )
-                    
+
                     # Write the content to disk using aiofiles
                     print(f"Writing audio file {i}")
                     async with aiofiles.open(audio_path, "wb") as f:
                         await f.write(audio_content)
-                    
+
                     # Now process the file on disk
                     if os.path.exists(audio_path) and os.path.getsize(audio_path) > 0:
                         transcript = await transcribe_audio(audio_path, OPENAI_API_KEY)
@@ -293,20 +335,20 @@ async def process_uploads(
         # Generate work summary if transcripts available
         if all_transcripts:
             full_transcript = " ".join(all_transcripts)
-            summary_data = await generate_work_summary(
-                full_transcript, vehicle_info
-            )
+            summary_data = await generate_work_summary(full_transcript, vehicle_info)
 
             # Update work order with summary data
-            update_data.update({
-                "vehicle_info": vehicle_info,
-                "work_summary": summary_data.get("work_summary", ""),
-                "line_items": summary_data.get("line_items", []),
-                "total_parts": summary_data.get("total_parts", 0),
-                "total_labor": summary_data.get("total_labor", 0),
-                "total": summary_data.get("total", 0),
-                "status": "processed",
-            })
+            update_data.update(
+                {
+                    "vehicle_info": vehicle_info,
+                    "work_summary": summary_data.get("work_summary", ""),
+                    "line_items": summary_data.get("line_items", []),
+                    "total_parts": summary_data.get("total_parts", 0),
+                    "total_labor": summary_data.get("total_labor", 0),
+                    "total": summary_data.get("total", 0),
+                    "status": "processed",
+                }
+            )
         else:
             # If we have vehicle info but no transcripts, still mark as processed
             if vehicle_info:
@@ -316,30 +358,48 @@ async def process_uploads(
         if update_data:
             WorkOrderRepository.update(db, order_id, update_data)
 
+        print(f"Workorder complete: {update_data}")
+
     except Exception as e:
         print(f"Error processing uploads: {e}")
         # Update work order status to error
-        if 'db' in locals():
+        if "db" in locals():
             try:
                 WorkOrderRepository.update(db, order_id, {"status": "error"})
             except Exception as update_error:
                 print(f"Error updating work order status: {update_error}")
     finally:
-        if 'db' in locals():
+        if "db" in locals():
             db.close()
+
 
 @router.get("/work-orders/{order_id}", response_model=WorkOrder)
 async def get_work_order(order_id: str, db: Session = Depends(get_db)):
-    """Get a work order by ID"""
+    """Get a work order by ID with customer and vehicle details"""
     work_order = WorkOrderRepository.get_by_id(db, order_id)
     if not work_order:
         raise HTTPException(status_code=404, detail="Work order not found")
-    return work_order
+
+    response = WorkOrderWithRelations.from_orm(work_order)
+
+    if work_order.customer_id:
+        customer = CustomerRepository.get_by_id(db, work_order.customer_id)
+        if customer:
+            response.customer = Customer.from_orm(customer)
+
+    if work_order.vehicle_id:
+        vehicle = VehicleRepository.get_by_id(db, work_order.vehicle_id)
+        if vehicle:
+            response.vehicle = Vehicle.from_orm(vehicle)
+
+    return response
+
 
 @router.get("/work-orders", response_model=List[WorkOrder])
 async def list_work_orders(db: Session = Depends(get_db)):
     """List all work orders"""
     return WorkOrderRepository.get_all(db)
+
 
 @router.get("/customers/{customer_id}/work-orders", response_model=List[WorkOrder])
 async def get_customer_work_orders(customer_id: str, db: Session = Depends(get_db)):
@@ -348,8 +408,9 @@ async def get_customer_work_orders(customer_id: str, db: Session = Depends(get_d
     customer = CustomerRepository.get_by_id(db, customer_id)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    
+
     return WorkOrderRepository.get_by_customer(db, customer_id)
+
 
 @router.put("/work-orders/{order_id}", response_model=WorkOrder)
 async def update_work_order(
@@ -362,6 +423,7 @@ async def update_work_order(
     if not updated_work_order:
         raise HTTPException(status_code=404, detail="Work order not found")
     return updated_work_order
+
 
 @router.delete("/work-orders/{order_id}")
 async def delete_work_order(order_id: str, db: Session = Depends(get_db)):

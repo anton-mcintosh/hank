@@ -9,7 +9,9 @@ async def get_year_make_model(vin: str) -> VehicleBase:
     # Make sure we have Results in the response
     if not response or "Results" not in response:
         print(f"Invalid response for VIN: {vin}")
-        return VehicleBase(customer_id="", vin=vin, year=None, make=None, model=None)
+        return VehicleBase(
+            id="", customer_id="", vin=vin, year=None, make=None, model=None
+        )
 
     results = response["Results"]
     year = None
@@ -35,4 +37,6 @@ async def get_year_make_model(vin: str) -> VehicleBase:
     # Debug info
     print(f"VIN: {vin}, Year: {year}, Make: {make}, Model: {model}")
 
-    return VehicleBase(customer_id="", vin=vin, year=year, make=make, model=model)
+    return VehicleBase(
+        id="", customer_id="", vin=vin, year=year, make=make, model=model
+    )

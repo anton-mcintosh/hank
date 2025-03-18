@@ -39,6 +39,7 @@ class Customer(CustomerBase):
 
 # ------ Vehicle Models ------
 class VehicleBase(BaseModel):
+    id: str
     customer_id: str
     vin: Optional[str] = None
     year: Optional[int] = None

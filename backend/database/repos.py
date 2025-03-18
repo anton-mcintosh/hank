@@ -9,7 +9,6 @@ from .db import CustomerDB, VehicleDB, WorkOrderDB
 class CustomerRepository:
     @staticmethod
     def create(db: Session, customer_data: Dict[str, Any]) -> CustomerDB:
-
         if "id" not in customer_data:
             customer_data["id"] = str(uuid.uuid4())
 
@@ -20,7 +19,9 @@ class CustomerRepository:
         return customer_db
 
     @staticmethod
-    def update(db: Session, customer_id: str, customer_data: Dict[str, Any]) -> Optional[CustomerDB]:
+    def update(
+        db: Session, customer_id: str, customer_data: Dict[str, Any]
+    ) -> Optional[CustomerDB]:
         customer = db.query(CustomerDB).filter(CustomerDB.id == customer_id).first()
         if not customer:
             return None
@@ -62,11 +63,10 @@ class CustomerRepository:
     def get_all(db: Session) -> List[CustomerDB]:
         return db.query(CustomerDB).all()
 
+
 class VehicleRepository:
-    
     @staticmethod
     def create(db: Session, vehicle_data: Dict[str, Any]) -> VehicleDB:
-
         if "id" not in vehicle_data:
             vehicle_data["id"] = str(uuid.uuid4())
 
@@ -77,7 +77,9 @@ class VehicleRepository:
         return vehicle_db
 
     @staticmethod
-    def update(db: Session, vehicle_id: str, vehicle_data: Dict[str, Any]) -> Optional[VehicleDB]:
+    def update(
+        db: Session, vehicle_id: str, vehicle_data: Dict[str, Any]
+    ) -> Optional[VehicleDB]:
         vehicle = db.query(VehicleDB).filter(VehicleDB.id == vehicle_id).first()
         if not vehicle:
             return None
@@ -119,6 +121,7 @@ class VehicleRepository:
     def get_all(db: Session) -> List[VehicleDB]:
         return db.query(VehicleDB).all()
 
+
 class WorkOrderRepository:
     @staticmethod
     def create(db, work_order_data):
@@ -133,14 +136,14 @@ class WorkOrderRepository:
         work_order = db.query(WorkOrderDB).filter(WorkOrderDB.id == order_id).first()
         if not work_order:
             return None
-        
+
         # Update fields
         for key, value in work_order_data.items():
             setattr(work_order, key, value)
-        
+
         # Always update the updated_at timestamp
         work_order.updated_at = datetime.now()
-        
+
         db.commit()
         db.refresh(work_order)
         return work_order
@@ -150,7 +153,7 @@ class WorkOrderRepository:
         work_order = db.query(WorkOrderDB).filter(WorkOrderDB.id == order_id).first()
         if not work_order:
             return False
-        
+
         db.delete(work_order)
         db.commit()
         return True
@@ -160,6 +163,11 @@ class WorkOrderRepository:
         return db.query(WorkOrderDB).filter(WorkOrderDB.id == order_id).first()
 
     @staticmethod
+    def get_by_customer(db, customer_id):
+        return (
+            db.query(WorkOrderDB).filter(WorkOrderDB.customer_id == customer_id).all()
+        )
+
+    @staticmethod
     def get_all(db):
         return db.query(WorkOrderDB).all()
-

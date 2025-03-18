@@ -58,7 +58,9 @@ class WorkOrderDB(Base):
     __tablename__ = "work_orders"
 
     id = Column(String, primary_key=True, index=True)
+    customer_id = Column(String, ForeignKey("customers.id"), nullable=True)
     customer_name = Column(String, nullable=True)
+    vehicle_id = Column(String, ForeignKey("vehicles.id"), nullable=True)
     vehicle_info = Column(JSON, default={})
     work_summary = Column(String, default="")
     line_items = Column(JSON, default=[])
@@ -72,6 +74,7 @@ class WorkOrderDB(Base):
 
 # Create database tables
 def init_db():
+    # Base.metadata.drop_all(bind=engine)  # Drop all tables (for development)
     Base.metadata.create_all(bind=engine)
 
 
