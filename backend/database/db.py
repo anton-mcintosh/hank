@@ -1,17 +1,30 @@
-from sqlalchemy import create_engine, Column, String, Float, JSON, TIMESTAMP, MetaData, ForeignKey, Integer
+from sqlalchemy import (
+    create_engine,
+    Column,
+    String,
+    Float,
+    JSON,
+    TIMESTAMP,
+    MetaData,
+    ForeignKey,
+    Integer,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import os
 
 # Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/hank")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/hank"
+)
 
 # Create SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
 
 class CustomerDB(Base):
     __tablename__ = "customers"
@@ -46,7 +59,7 @@ class WorkOrderDB(Base):
 
     id = Column(String, primary_key=True, index=True)
     customer_name = Column(String, nullable=True)
-    vehicle_info = Column(JSON, default={})
+    vehicle_id = Column(String, ForeignKey("vehicles.id"))
     work_summary = Column(String, default="")
     line_items = Column(JSON, default=[])
     total_parts = Column(Float, default=0.0)
@@ -56,9 +69,11 @@ class WorkOrderDB(Base):
     created_at = Column(TIMESTAMP, default=datetime.now)
     updated_at = Column(TIMESTAMP, default=datetime.now)
 
+
 # Create database tables
 def init_db():
     Base.metadata.create_all(bind=engine)
+
 
 # Database dependency to use in FastAPI
 def get_db():
@@ -67,6 +82,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-# WorkOrder CRUD operations
-
