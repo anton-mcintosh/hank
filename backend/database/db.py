@@ -59,7 +59,7 @@ class WorkOrderDB(Base):
 
     id = Column(String, primary_key=True, index=True)
     customer_name = Column(String, nullable=True)
-    vehicle_id = Column(String, ForeignKey("vehicles.id"))
+    vehicle_info = Column(JSON, default={})
     work_summary = Column(String, default="")
     line_items = Column(JSON, default=[])
     total_parts = Column(Float, default=0.0)
@@ -82,3 +82,6 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# WorkOrder CRUD operations
