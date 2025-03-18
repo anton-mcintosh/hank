@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
+
 class CustomerBase(BaseModel):
     first_name: str
     last_name: str
@@ -9,8 +10,10 @@ class CustomerBase(BaseModel):
     phone: str
     address: str
 
+
 class CustomerCreate(CustomerBase):
     pass
+
 
 class CustomerUpdate(BaseModel):
     first_name: Optional[str] = None
@@ -23,6 +26,7 @@ class CustomerUpdate(BaseModel):
     class Config:
         extra = "ignore"
 
+
 class Customer(CustomerBase):
     id: str
     created_at: datetime
@@ -31,6 +35,7 @@ class Customer(CustomerBase):
     class Config:
         from_attributes = True
         json_encoders = {datetime: lambda dt: dt.isoformat()}
+
 
 # ------ Vehicle Models ------
 class VehicleBase(BaseModel):
@@ -41,8 +46,10 @@ class VehicleBase(BaseModel):
     model: Optional[str] = None
     mileage: Optional[int] = None
 
+
 class VehicleCreate(VehicleBase):
     pass
+
 
 class VehicleUpdate(BaseModel):
     customer_id: Optional[str] = None
@@ -55,6 +62,7 @@ class VehicleUpdate(BaseModel):
     class Config:
         extra = "ignore"
 
+
 class Vehicle(VehicleBase):
     id: str
     created_at: datetime
@@ -64,6 +72,7 @@ class Vehicle(VehicleBase):
         from_attributes = True
         json_encoders = {datetime: lambda dt: dt.isoformat()}
 
+
 # ------ Line Item Model ------
 class LineItem(BaseModel):
     description: str
@@ -71,6 +80,7 @@ class LineItem(BaseModel):
     quantity: float
     unit_price: float
     total: float
+
 
 # ------ Work Order Models ------
 class WorkOrderBase(BaseModel):
@@ -83,9 +93,11 @@ class WorkOrderBase(BaseModel):
     total: float = 0
     status: str = "draft"
 
+
 # what is this?
 class WorkOrderCreate(WorkOrderBase):
     pass
+
 
 class WorkOrderUpdate(BaseModel):
     customer_id: Optional[str] = None
@@ -99,6 +111,7 @@ class WorkOrderUpdate(BaseModel):
 
     class Config:
         extra = "ignore"
+
 
 class WorkOrder(WorkOrderBase):
     id: str

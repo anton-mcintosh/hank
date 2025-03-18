@@ -2,9 +2,10 @@ fastapi
 uvicorn
 sqlalchemy
 psycopg2-binary
-httpx>29
+httpx==0.28.1
 pydantic
 aiofiles
 python-multipart
 python-dotenv
+openai
 

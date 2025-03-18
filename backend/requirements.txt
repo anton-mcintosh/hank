@@ -11,6 +11,7 @@ annotated-types==0.7.0
 anyio==4.8.0
     # via
     #   httpx
+    #   openai
     #   starlette
 certifi==2025.1.31
     # via
@@ -18,6 +19,8 @@ certifi==2025.1.31
     #   httpx
 click==8.1.8
     # via uvicorn
+distro==1.9.0
+    # via openai
 fastapi==0.115.11
     # via -r requirements.in
 greenlet==3.1.1
@@ -29,17 +32,24 @@ h11==0.14.0
 httpcore==1.0.7
     # via httpx
 httpx==0.28.1
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   openai
 idna==3.10
     # via
     #   anyio
     #   httpx
+jiter==0.9.0
+    # via openai
+openai==1.66.3
+    # via -r requirements.in
 psycopg2-binary==2.9.10
     # via -r requirements.in
 pydantic==2.10.6
     # via
     #   -r requirements.in
     #   fastapi
+    #   openai
 pydantic-core==2.27.2
     # via pydantic
 python-dotenv==1.0.1
@@ -47,15 +57,20 @@ python-dotenv==1.0.1
 python-multipart==0.0.20
     # via -r requirements.in
 sniffio==1.3.1
-    # via anyio
+    # via
+    #   anyio
+    #   openai
 sqlalchemy==2.0.38
     # via -r requirements.in
 starlette==0.46.0
     # via fastapi
+tqdm==4.67.1
+    # via openai
 typing-extensions==4.12.2
     # via
     #   anyio
     #   fastapi
+    #   openai
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
