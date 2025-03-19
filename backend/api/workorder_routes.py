@@ -338,6 +338,7 @@ async def process_uploads(
             summary_data = await generate_work_summary(full_transcript, vehicle_info)
 
             # Update work order with summary data
+            print(f"Final vehicle info update: {vehicle_info}")
             update_data.update(
                 {
                     "vehicle_info": vehicle_info,

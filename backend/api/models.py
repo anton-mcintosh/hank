@@ -87,6 +87,7 @@ class LineItem(BaseModel):
 class WorkOrderBase(BaseModel):
     customer_id: Optional[str] = None
     vehicle_id: Optional[str] = None
+    vehicle_info: Dict[str, Any] = {}
     work_summary: str = ""
     line_items: List[Dict[str, Any]] = []
     total_parts: float = 0
@@ -103,6 +104,7 @@ class WorkOrderCreate(WorkOrderBase):
 class WorkOrderUpdate(BaseModel):
     customer_id: Optional[str] = None
     vehicle_id: Optional[str] = None
+    vehicle_info: Optional[Dict[str, Any]] = None
     work_summary: Optional[str] = None
     line_items: Optional[List[Dict[str, Any]]] = None
     total_parts: Optional[float] = None
