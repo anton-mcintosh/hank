@@ -126,6 +126,7 @@ class WorkOrderRepository:
     @staticmethod
     def create(db, work_order_data):
         work_order_db = WorkOrderDB(**work_order_data)
+        print(f"Creating work order with {work_order_data}")
         db.add(work_order_db)
         db.commit()
         db.refresh(work_order_db)
@@ -138,6 +139,7 @@ class WorkOrderRepository:
             return None
 
         # Update fields
+        print(f"Updating work order with {work_order_data}")
         for key, value in work_order_data.items():
             setattr(work_order, key, value)
 

@@ -32,6 +32,7 @@ class WorkOrderWithRelations(BaseModel):
     id: str
     customer_id: str = None
     vehicle_id: str = None
+    vehicle_info: Dict[str, Any] = {}
     work_summary: str = ""
     line_items: List[Dict[str, Any]] = []
     total_parts: float = 0
@@ -360,6 +361,7 @@ async def process_uploads(
             WorkOrderRepository.update(db, order_id, update_data)
 
         print(f"Workorder complete: {update_data}")
+        print(f"")
 
     except Exception as e:
         print(f"Error processing uploads: {e}")
