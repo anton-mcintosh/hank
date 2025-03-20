@@ -8,4 +8,7 @@ aiofiles
 python-multipart
 python-dotenv
 openai
+markdown
+pdfkit
+reportlab
 
