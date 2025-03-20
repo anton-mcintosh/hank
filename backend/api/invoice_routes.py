@@ -5,9 +5,8 @@ from pydantic import BaseModel
 
 from database.db import get_db
 from database.repos import WorkOrderRepository, CustomerRepository, VehicleRepository
-from services.invoice import generate_invoice_markdown
-from services.markdown_to_pdf import convert_markdown_to_pdf
-# from services.email_service import send_email_with_markdown
+from services.invoice_generator_html import generate_invoice_html, generate_pdf_with_reportlab
+# from services.email_service import send_email_with_attachment
 
 router = APIRouter()
 
@@ -25,7 +24,7 @@ async def generate_invoice(
     db: Session = Depends(get_db)
 ):
     """
-    Generate an invoice using AI for a work order
+    Generate an invoice using HTML template and ReportLab for PDF
     
     Args:
         order_id: Work order ID
@@ -34,7 +33,7 @@ async def generate_invoice(
         db: Database session
         
     Returns:
-        dict: Response with markdown content and file path if applicable
+        dict: Response with HTML content and file paths if applicable
     """
     # Get work order
     work_order = WorkOrderRepository.get_by_id(db, order_id)
@@ -50,15 +49,15 @@ async def generate_invoice(
     if work_order.vehicle_id:
         vehicle = VehicleRepository.get_by_id(db, work_order.vehicle_id)
     
-    # Generate markdown invoice using OpenAI
-    markdown_content = await generate_invoice_markdown(
+    # Generate HTML invoice using template
+    html_content, html_path, template_data = await generate_invoice_html(
         work_order, 
         customer, 
         vehicle, 
         is_estimate=False
     )
     
-    if not markdown_content:
+    if not html_content:
         raise HTTPException(status_code=500, detail="Failed to generate invoice")
     
     # Update work order status
@@ -66,49 +65,39 @@ async def generate_invoice(
     
     result = {
         "status": "success",
-        "markdown_content": markdown_content,
+        "html_content": html_content,
+        "html_path": html_path
     }
     
     # Generate PDF if requested
     pdf_path = None
     if request.generate_pdf:
-        print("Generating PDF...")
-        pdf_path = await convert_markdown_to_pdf(
-            markdown_content, 
-            filename_prefix=f"Invoice_{order_id[:8]}"
-        )
+        print("Generating PDF with ReportLab...")
+        # Generate PDF using ReportLab
+        pdf_path = await generate_pdf_with_reportlab(template_data)
 
         if pdf_path:
             result["pdf_path"] = pdf_path
         else:
             result["status"] = "partial"
-            result["message"] = "Generated markdown but failed to create PDF"
+            result["message"] = "Generated HTML but failed to create PDF"
 
     # # Send email if requested
     # if request.send_email and request.email:
     #     if background_tasks:
     #         # Send email in background
+    #         attachment_path = pdf_path if request.generate_pdf and pdf_path else html_path
     #         background_tasks.add_task(
-    #             send_email_with_markdown,
+    #             send_email_with_attachment,
     #             request.email,
     #             f"Invoice #{order_id[:8]} from Your Auto Shop",
-    #             markdown_content,
-    #             pdf_path if request.generate_pdf else None
+    #             html_content,  # HTML body
+    #             attachment_path  # Attachment
     #         )
     #         result["email_status"] = "queued"
     #     else:
-    #         # Send email synchronously
-    #         email_sent = await send_email_with_markdown(
-    #             request.email,
-    #             f"Invoice #{order_id[:8]} from Your Auto Shop",
-    #             markdown_content,
-    #             pdf_path if request.generate_pdf else None
-    #         )
-    #
-    #         if email_sent:
-    #             result["email_status"] = "sent"
-    #         else:
-    #             result["email_status"] = "failed"
+    #         # Code for synchronous email sending
+    #         pass
     
     return result
 
@@ -120,7 +109,7 @@ async def generate_estimate(
     db: Session = Depends(get_db)
 ):
     """
-    Generate an estimate using AI for a work order
+    Generate an estimate using HTML template and ReportLab for PDF
     
     Args:
         order_id: Work order ID
@@ -129,7 +118,7 @@ async def generate_estimate(
         db: Database session
         
     Returns:
-        dict: Response with markdown content and file path if applicable
+        dict: Response with HTML content and file paths if applicable
     """
     # Get work order
     work_order = WorkOrderRepository.get_by_id(db, order_id)
@@ -145,15 +134,15 @@ async def generate_estimate(
     if work_order.vehicle_id:
         vehicle = VehicleRepository.get_by_id(db, work_order.vehicle_id)
     
-    # Generate markdown estimate using OpenAI
-    markdown_content = await generate_invoice_markdown(
+    # Generate HTML estimate using template
+    html_content, html_path, template_data = await generate_invoice_html(
         work_order, 
         customer, 
         vehicle, 
         is_estimate=True
     )
     
-    if not markdown_content:
+    if not html_content:
         raise HTTPException(status_code=500, detail="Failed to generate estimate")
     
     # Update work order status
@@ -161,47 +150,23 @@ async def generate_estimate(
     
     result = {
         "status": "success",
-        "markdown_content": markdown_content,
+        "html_content": html_content,
+        "html_path": html_path
     }
     
-    # # Generate PDF if requested
-    # pdf_path = None
-    # if request.generate_pdf:
-    #     pdf_path = await convert_markdown_to_pdf(
-    #         markdown_content, 
-    #         filename_prefix=f"Estimate_{order_id[:8]}"
-    #     )
-    #
-    #     if pdf_path:
-    #         result["pdf_path"] = pdf_path
-    #     else:
-    #         result["status"] = "partial"
-    #         result["message"] = "Generated markdown but failed to create PDF"
-    #
-    # # Send email if requested
-    # if request.send_email and request.email:
-    #     if background_tasks:
-    #         # Send email in background
-    #         background_tasks.add_task(
-    #             send_email_with_markdown,
-    #             request.email,
-    #             f"Estimate #{order_id[:8]} from Your Auto Shop",
-    #             markdown_content,
-    #             pdf_path if request.generate_pdf else None
-    #         )
-    #         result["email_status"] = "queued"
-    #     else:
-    #         # Send email synchronously
-    #         email_sent = await send_email_with_markdown(
-    #             request.email,
-    #             f"Estimate #{order_id[:8]} from Your Auto Shop",
-    #             markdown_content,
-    #             pdf_path if request.generate_pdf else None
-    #         )
-    #
-    #         if email_sent:
-    #             result["email_status"] = "sent"
-    #         else:
-    #             result["email_status"] = "failed"
+    # Generate PDF if requested
+    pdf_path = None
+    if request.generate_pdf:
+        print("Generating PDF with ReportLab...")
+        # Generate PDF using ReportLab
+        pdf_path = await generate_pdf_with_reportlab(template_data)
+
+        if pdf_path:
+            result["pdf_path"] = pdf_path
+        else:
+            result["status"] = "partial"
+            result["message"] = "Generated HTML but failed to create PDF"
+    
+    # Implement email functionality as needed
     
     return result

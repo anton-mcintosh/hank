@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .company-info {
+            flex: 1;
+        }
+        .invoice-info {
+            text-align: right;
+            flex: 1;
+        }
+        h1 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th {
+            background-color: #0066cc;
+            color: white;
+            text-align: left;
+            padding: 8px;
+        }
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        .totals {
+            text-align: right;
+        }
+        .totals-table {
+            width: 300px;
+            margin-left: auto;
+        }
+        .totals-table td {
+            padding: 5px;
+        }
+        .total-row {
+            font-weight: bold;
+            border-top: 2px solid #333;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">
+            <h1>{{ company_name }}</h1>
+            <p>
+                {{ company_address }}<br>
+                Phone: {{ company_phone }}<br>
+                Email: {{ company_email }}<br>
+                Website: {{ company_website }}
+            </p>
+        </div>
+        <div class="invoice-info">
+            <h2>{{ document_type }}</h2>
+            <p>
+                <strong>{{ document_type }} Number:</strong> {{ order_id }}<br>
+                <strong>Date:</strong> {{ date }}
+            </p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Customer Information</h3>
+        <table>
+            <tr>
+                <td><strong>Name:</strong></td>
+                <td>{{ customer_name }}</td>
+            </tr>
+            {% if customer_phone != "N/A" %}
+            <tr>
+                <td><strong>Phone:</strong></td>
+                <td>{{ customer_phone }}</td>
+            </tr>
+            {% endif %}
+            {% if customer_email != "N/A" %}
+            <tr>
+                <td><strong>Email:</strong></td>
+                <td>{{ customer_email }}</td>
+            </tr>
+            {% endif %}
+            {% if customer_address != "N/A" %}
+            <tr>
+                <td><strong>Address:</strong></td>
+                <td>{{ customer_address }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Vehicle Information</h3>
+        <table>
+            <tr>
+                <td><strong>Year:</strong></td>
+                <td>{{ vehicle_year }}</td>
+                <td><strong>Make:</strong></td>
+                <td>{{ vehicle_make }}</td>
+            </tr>
+            <tr>
+                <td><strong>Model:</strong></td>
+                <td>{{ vehicle_model }}</td>
+                <td><strong>VIN:</strong></td>
+                <td>{{ vehicle_vin }}</td>
+            </tr>
+            <tr>
+                <td><strong>Mileage:</strong></td>
+                <td>{{ vehicle_mileage }}</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Work Summary</h3>
+        <p>{{ work_summary }}</p>
+    </div>
+
+    <div class="section">
+        <h3>Line Items</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in line_items %}
+                <tr>
+                    <td>{{ item.description }}</td>
+                    <td>{{ item.type }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.unit_price }}</td>
+                    <td>{{ item.total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="totals">
+        <table class="totals-table">
+            <tr>
+                <td><strong>Parts:</strong></td>
+                <td>{{ total_parts }}</td>
+            </tr>
+            <tr>
+                <td><strong>Labor:</strong></td>
+                <td>{{ total_labor }}</td>
+            </tr>
+            <tr class="total-row">
+                <td><strong>Total:</strong></td>
+                <td>{{ total }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        {% if is_estimate %}
+        <p><strong>Note:</strong> This is an ESTIMATE only. Actual charges may vary based on additional parts or labor required.</p>
+        {% else %}
+        <p><strong>Payment Terms:</strong> Payment is due within 30 days of invoice date. Late payments may be subject to additional fees.</p>
+        {% endif %}
+        <p>Thank you for choosing {{ company_name }} for your vehicle maintenance needs. We appreciate your business!</p>
+    </div>
+</body>
+</html>

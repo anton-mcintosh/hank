@@ -11,4 +11,5 @@ openai
 markdown
 pdfkit
 reportlab
+jinja2
 
