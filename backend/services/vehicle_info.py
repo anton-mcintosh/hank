@@ -17,6 +17,8 @@ async def get_year_make_model(vin: str) -> VehicleBase:
     year = None
     make = None
     model = None
+    engine_size = None
+    cylinders = None
 
     # Loop through all the result items to find what we need
     for item in results:
@@ -33,10 +35,14 @@ async def get_year_make_model(vin: str) -> VehicleBase:
             make = item.get("Value")
         elif variable == "Model":
             model = item.get("Value")
+        elif variable == "Engine Model":
+            engine_code = item.get("Value")
+        elif variable == "Displacement (L)":  # Engine size
+            engine_size = item.get("Value")
 
     # Debug info
-    print(f"VIN: {vin}, Year: {year}, Make: {make}, Model: {model}")
+    print(f"VIN: {vin}, Year: {year}, Make: {make}, Model: {model}, Engine Size: {engine_size}, Engine Code: {engine_code}")
 
     return VehicleBase(
-        id="", customer_id="", vin=vin, year=year, make=make, model=model
+        id="", customer_id="", vin=vin, year=year, make=make, model=model, engine_size=engine_size, engine_code=engine_code
     )

@@ -49,6 +49,8 @@ class VehicleDB(Base):
     year = Column(Integer, nullable=True)
     make = Column(String, nullable=True)
     model = Column(String, nullable=True)
+    engine_size = Column(String, nullable=True)
+    engine_code = Column(String, nullable=True)
     mileage = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP, default=datetime.now)
     updated_at = Column(TIMESTAMP, default=datetime.now)

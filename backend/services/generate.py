@@ -50,7 +50,7 @@ async def generate_work_summary(transcript, vehicle_info):
                     {"role": "system", "content": "You are an expert auto repair service writer who converts technician notes into professional work orders."},
                     {"role": "user", "content": prompt}
                 ],
-                "temperature": 0.2,
+                "temperature": 0.1,
                 "response_format": {"type": "json_object"}
             }
             
