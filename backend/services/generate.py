@@ -24,8 +24,10 @@ async def generate_work_summary(transcript, vehicle_info):
             Based on the following voice memo transcript from an auto technician, create:
             1. A summary of work performed
             2. A detailed list of parts used with prices
-            3. An estimate of labor hours and cost (assume $100/hour)
+            3. An estimate of labor hours and cost (assume $50/hour)
             4. A total estimate
+            5. If there are recommendations made to the customer to take later, outline these because this is where the customer will read them.
+            6. Shoot for 400 words
             
             {vehicle_context}
             
