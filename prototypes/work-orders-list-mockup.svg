@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 800" width="375" height="800">
+  <!-- Phone frame -->
+  <rect width="375" height="800" fill="#f5f7fa" rx="20" ry="20"/>
+  
+  <!-- Status bar -->
+  <rect width="375" height="40" fill="#ffffff" />
+  <text x="330" y="25" font-family="Arial" font-size="12" fill="#000000">9:41</text>
+  
+  <!-- Header -->
+  <rect width="375" height="60" y="40" fill="#3470d9" />
+  <text x="20" y="75" font-family="Arial" font-size="18" font-weight="bold" fill="#ffffff">Work Orders</text>
+  
+  <!-- Search bar -->
+  <rect width="210" height="36" x="145" y="52" fill="#ffffff" fill-opacity="0.2" rx="18" ry="18" />
+  <text x="165" y="75" font-family="Arial" font-size="14" fill="#ffffff">🔍 Search</text>
+  
+  <!-- Filter button -->
+  <circle cx="340" cy="70" r="15" fill="#ffffff" fill-opacity="0.2" />
+  <text x="340" y="74" font-family="Arial" font-size="14" fill="#ffffff" text-anchor="middle">⊞</text>
+  
+  <!-- Tabs for filtering work orders -->
+  <rect width="375" height="50" y="100" fill="#ffffff" />
+  <rect width="93" height="45" x="0" y="105" fill="#ffffff" />
+  <text x="47" y="130" font-family="Arial" font-size="14" font-weight="bold" fill="#3470d9" text-anchor="middle">All</text>
+  <rect width="2" height="30" x="93" y="110" fill="#f0f0f0" />
+  
+  <rect width="94" height="45" x="94" y="105" fill="#ffffff" />
+  <text x="141" y="130" font-family="Arial" font-size="14" fill="#666666" text-anchor="middle">Active</text>
+  <rect width="2" height="30" x="188" y="110" fill="#f0f0f0" />
+  
+  <rect width="93" height="45" x="189" y="105" fill="#ffffff" />
+  <text x="235" y="130" font-family="Arial" font-size="14" fill="#666666" text-anchor="middle">Pending</text>
+  <rect width="2" height="30" x="282" y="110" fill="#f0f0f0" />
+  
+  <rect width="93" height="45" x="283" y="105" fill="#ffffff" />
+  <text x="329" y="130" font-family="Arial" font-size="14" fill="#666666" text-anchor="middle">Completed</text>
+  
+  <line x1="23" y1="150" x2="70" y2="150" stroke="#3470d9" stroke-width="3" />
+  
+  <!-- Work Orders List -->
+  <!-- Work Order 1 -->
+  <rect width="375" height="110" x="0" y="152" fill="#ffffff" />
+  <rect width="335" height="90" x="20" y="162" fill="#ffffff" rx="8" ry="8" stroke="#eeeeee" stroke-width="1" />
+  
+  <rect width="80" height="25" x="270" y="167" fill="#ffad33" rx="12" ry="12" />
+  <text x="310" y="184" font-family="Arial" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">PENDING</text>
+  
+  <text x="35" y="184" font-family="Arial" font-size="14" font-weight="bold" fill="#333333">WO-29845</text>
+  <text x="120" y="184" font-family="Arial" font-size="12" fill="#666666">Mar 15, 2025</text>
+  
+  <line x1="35" y1="192" x2="320" y2="192" stroke="#f0f0f0" stroke-width="1" />
+  
+  <text x="35" y="210" font-family="Arial" font-size="13" font-weight="bold" fill="#333333">John Doe</text>
+  <text x="180" y="210" font-family="Arial" font-size="13" fill="#666666">2019 Toyota Camry</text>
+  
+  <text x="35" y="230" font-family="Arial" font-size="12" fill="#666666" width="280">Check engine light, oxygen sensor replacement</text>
+  <text x="340" y="220" font-family="Arial" font-size="16" fill="#999999">›</text>
+  
+  <!-- Work Order 2 -->
+  <rect width="375" height="110" x="0" y="262" fill="#ffffff" />
+  <rect width="335" height="90" x="20" y="272" fill="#ffffff" rx="8" ry="8" stroke="#eeeeee" stroke-width="1" />
+  
+  <rect width="80" height="25" x="270" y="277" fill="#50c356" rx="12" ry="12" />
+  <text x="310" y="294" font-family="Arial" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">COMPLETED</text>
+  
+  <text x="35" y="294" font-family="Arial" font-size="14" font-weight="bold" fill="#333333">WO-29844</text>
+  <text x="120" y="294" font-family="Arial" font-size="12" fill="#666666">Mar 15, 2025</text>
+  
+  <line x1="35" y1="302" x2="320" y2="302" stroke="#f0f0f0" stroke-width="1" />
+  
+  <text x="35" y="320" font-family="Arial" font-size="13" font-weight="bold" fill="#333333">Sarah Johnson</text>
+  <text x="180" y="320" font-family="Arial" font-size="13" fill="#666666">2020 Honda Civic</text>
+  
+  <text x="35" y="340" font-family="Arial" font-size="12" fill="#666666" width="280">Oil change, tire rotation, brake inspection</text>
+  <text x="340" y="330" font-family="Arial" font-size="16" fill="#999999">›</text>
+  
+  <!-- Work Order 3 -->
+  <rect width="375" height="110" x="0" y="372" fill="#ffffff" />
+  <rect width="335" height="90" x="20" y="382" fill="#ffffff" rx="8" ry="8" stroke="#eeeeee" stroke-width="1" />
+  
+  <rect width="80" height="25" x="270" y="387" fill="#3470d9" rx="12" ry="12" />
+  <text x="310" y="404" font-family="Arial" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">ACTIVE</text>
+  
+  <text x="35" y="404" font-family="Arial" font-size="14" font-weight="bold" fill="#333333">WO-29843</text>
+  <text x="120" y="404" font-family="Arial" font-size="12" fill="#666666">Mar 14, 2025</text>
+  
+  <line x1="35" y1="412" x2="320" y2="412" stroke="#f0f0f0" stroke-width="1" />
+  
+  <text x="35" y="430" font-family="Arial" font-size="13" font-weight="bold" fill="#333333">Mike Thompson</text>
+  <text x="180" y="430" font-family="Arial" font-size="13" fill="#666666">2018 Ford F-150</text>
+  
+  <text x="35" y="450" font-family="Arial" font-size="12" fill="#666666" width="280">Transmission service, coolant flush</text>
+  <text x="340" y="440" font-family="Arial" font-size="16" fill="#999999">›</text>
+  
+  <!-- Work Order 4 -->
+  <rect width="375" height="110" x="0" y="482" fill="#ffffff" />
+  <rect width="335" height="90" x="20" y="492" fill="#ffffff" rx="8" ry="8" stroke="#eeeeee" stroke-width="1" />
+  
+  <rect width="80" height="25" x="270" y="497" fill="#e74c3c" rx="12" ry="12" />
+  <text x="310" y="514" font-family="Arial" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">PAUSED</text>
+  
+  <text x="35" y="514" font-family="Arial" font-size="14" font-weight="bold" fill="#333333">WO-29842</text>
+  <text x="120" y="514" font-family="Arial" font-size="12" fill="#666666">Mar 14, 2025</text>
+  
+  <line x1="35" y1="522" x2="320" y2="522" stroke="#f0f0f0" stroke-width="1" />
+  
+  <text x="35" y="540" font-family="Arial" font-size="13" font-weight="bold" fill="#333333">Emily Wilson</text>
+  <text x="180" y="540" font-family="Arial" font-size="13" fill="#666666">2017 Subaru Outback</text>
+  
+  <text x="35" y="560" font-family="Arial" font-size="12" fill="#666666" width="280">Waiting for parts - CV joint replacement</text>
+  <text x="340" y="550" font-family="Arial" font-size="16" fill="#999999">›</text>
+  
+  <!-- Work Order 5 (partial) -->
+  <rect width="375" height="60" x="0" y="592" fill="#ffffff" />
+  <rect width="335" height="90" x="20" y="602" fill="#ffffff" rx="8" ry="8" stroke="#eeeeee" stroke-width="1" />
+  
+  <rect width="80" height="25" x="270" y="607" fill="#9b59b6" rx="12" ry="12" />
+  <text x="310" y="624" font-family="Arial" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">INVOICED</text>
+  
+  <text x="35" y="624" font-family="Arial" font-size="14" font-weight="bold" fill="#333333">WO-29841</text>
+  <text x="120" y="624" font-family="Arial" font-size="12" fill="#666666">Mar 13, 2025</text>
+  
+  <line x1="35" y1="632" x2="320" y2="632" stroke="#f0f0f0" stroke-width="1" />
+  
+  <!-- Floating Action Button -->
+  <circle cx="315" cy="670" r="30" fill="#3470d9" />
+  <text x="315" y="676" font-family="Arial" font-size="24" fill="#ffffff" text-anchor="middle">+</text>
+  
+  <!-- Tab Bar -->
+  <rect width="375" height="60" y="740" fill="#ffffff" />
+  <line x1="0" y1="740" x2="375" y2="740" stroke="#dddddd" stroke-width="1" />
+  
+  <!-- Home Tab -->
+  <circle cx="55" cy="770" r="18" fill="#f5f7fa" />
+  <text x="55" y="775" font-family="Arial" font-size="14" fill="#666666" text-anchor="middle">🏠</text>
+  <text x="55" y="795" font-family="Arial" font-size="9" fill="#666666" text-anchor="middle">Home</text>
+  
+  <!-- Work Orders Tab -->
+  <circle cx="130" cy="770" r="18" fill="#e6efff" />
+  <text x="130" y="775" font-family="Arial" font-size="14" fill="#3470d9" text-anchor="middle">📋</text>
+  <text x="130" y="795" font-family="Arial" font-size="9" fill="#3470d9" text-anchor="middle">Work Orders</text>
+  
+  <!-- Customers Tab -->
+  <circle cx="205" cy="770" r="18" fill="#f5f7fa" />
+  <text x="205" y="775" font-family="Arial" font-size="14" fill="#666666" text-anchor="middle">👥</text>
+  <text x="205" y="795" font-family="Arial" font-size="9" fill="#666666" text-anchor="middle">Customers</text>
+  
+  <!-- Invoices Tab -->
+  <circle cx="280" cy="770" r="18" fill="#f5f7fa" />
+  <text x="280" y="775" font-family="Arial" font-size="14" fill="#666666" text-anchor="middle">🧾</text>
+  <text x="280" y="795" font-family="Arial" font-size="9" fill="#666666" text-anchor="middle">Invoices</text>
+  
+  <!-- More Tab -->
+  <circle cx="355" cy="770" r="18" fill="#f5f7fa" />
+  <text x="355" y="775" font-family="Arial" font-size="14" fill="#666666" text-anchor="middle">☰</text>
+  <text x="355" y="795" font-family="Arial" font-size="9" fill="#666666" text-anchor="middle">More</text>
+</svg>
