@@ -1,3 +1,4 @@
 backend/.env
 backend/uploads/
 backend/venv/
+backend/invoices/
