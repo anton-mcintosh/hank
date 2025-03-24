@@ -114,8 +114,8 @@ class VehicleRepository:
         return db.query(VehicleDB).filter(VehicleDB.vin == vin).first()
 
     @staticmethod
-    def get_by_customer(db: Session, vin: str) -> Optional[VehicleDB]:
-        return db.query(VehicleDB).filter(VehicleDB.vin == vin).first()
+    def get_by_customer(db: Session, customer_id: str) -> List[VehicleDB]:
+        return db.query(VehicleDB).filter(VehicleDB.customer_id == customer_id).all()
 
     @staticmethod
     def get_all(db: Session) -> List[VehicleDB]:

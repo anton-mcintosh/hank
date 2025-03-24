@@ -7,7 +7,7 @@ from datetime import datetime
 from database.db import get_db
 
 from api.models import Vehicle, VehicleCreate, VehicleUpdate
-from database.repos import VehicleRepository
+from database.repos import VehicleRepository, CustomerRepository
 
 router = APIRouter()
 
