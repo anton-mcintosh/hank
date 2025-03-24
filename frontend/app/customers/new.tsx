@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { router, Stack } from "expo-router";
 
-import ThemedText from "../../components/ThemedText";
-import ThemedView from "../../components/ThemedView";
-import api from "../../api";
+import ThemedText from "../components/ThemedText";
+import ThemedView from "../components/ThemedView";
+import api from "../api";
 import { CustomerCreate } from "../../api/types";
 
 export default function NewCustomerScreen() {
