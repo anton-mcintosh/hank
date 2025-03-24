@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, FlatList, View, ActivityIndicator, TouchableOpacity } from "react-native";
+import { 
+  StyleSheet, 
+  FlatList, 
+  View, 
+  ActivityIndicator, 
+  TouchableOpacity, 
+  RefreshControl,
+  Platform,
+  Dimensions,
+  SafeAreaView
+} from "react-native";
 import { router } from "expo-router";
 
 import ThemedText from "../components/ThemedText";
@@ -10,6 +20,7 @@ import { Customer } from "../api/types";
 export default function CustomersScreen() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Load customers when the component mounts
@@ -18,8 +29,12 @@ export default function CustomersScreen() {
   }, []);
 
   // Function to load customers from the API
-  const loadCustomers = async () => {
-    setLoading(true);
+  const loadCustomers = async (isRefreshing = false) => {
+    if (isRefreshing) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     
     try {
@@ -30,7 +45,12 @@ export default function CustomersScreen() {
       console.error("Error loading customers:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    loadCustomers(true);
   };
 
   // Render a customer card
@@ -45,6 +65,19 @@ export default function CustomersScreen() {
       <ThemedText>{item.phone}</ThemedText>
       <ThemedText>{item.email}</ThemedText>
     </TouchableOpacity>
+  );
+
+  // Floating action button component
+  const FloatingActionButton = () => (
+    <View style={styles.fabContainer}>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push("/customers/new")}
+        activeOpacity={0.8}
+      >
+        <ThemedText style={styles.fabText}>+</ThemedText>
+      </TouchableOpacity>
+    </View>
   );
 
   // Render loading state
@@ -62,7 +95,7 @@ export default function CustomersScreen() {
     return (
       <ThemedView style={styles.centerContainer}>
         <ThemedText style={styles.errorText}>{error}</ThemedText>
-        <TouchableOpacity style={styles.retryButton} onPress={loadCustomers}>
+        <TouchableOpacity style={styles.retryButton} onPress={() => loadCustomers()}>
           <ThemedText style={styles.retryText}>Retry</ThemedText>
         </TouchableOpacity>
       </ThemedView>
@@ -86,27 +119,42 @@ export default function CustomersScreen() {
 
   // Render customers list
   return (
-    <ThemedView style={styles.container}>
-      <FlatList
-        data={customers}
-        renderItem={renderCustomer}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
-      <TouchableOpacity 
-        style={styles.floatingButton}
-        onPress={() => router.push("/customers/new")}
-      >
-        <ThemedText style={styles.floatingButtonText}>+</ThemedText>
-      </TouchableOpacity>
-    </ThemedView>
+    <SafeAreaView style={styles.safeArea}>
+      <ThemedView style={styles.container}>
+        <FlatList
+          data={customers}
+          renderItem={renderCustomer}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={["#0a7ea4"]}
+              tintColor="#0a7ea4"
+            />
+          }
+        />
+        
+        {/* We place the FAB outside of other scrollable content */}
+        <FloatingActionButton />
+      </ThemedView>
+    </SafeAreaView>
   );
 }
 
+// Get screen dimensions for positioning
+const { width, height } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
+    position: 'relative',
   },
   centerContainer: {
     flex: 1,
@@ -116,6 +164,8 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
+    // Add bottom padding to ensure the last item isn't covered by the FAB
+    paddingBottom: 80,
   },
   customerCard: {
     padding: 16,
@@ -149,24 +199,53 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: "white",
   },
-  floatingButton: {
-    position: "absolute",
-    bottom: 24,
+  // FAB container to enforce proper positioning
+  fabContainer: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 80 : 24, // Higher position on iOS for safe area
     right: 24,
+    // Higher z-index for iOS to ensure visibility
+    zIndex: 9999,
+    elevation: Platform.OS === 'android' ? 8 : 0,
+    // Ensure it's rendered
+    width: 56,
+    height: 56,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      }
+    })
+  },
+  // Actual FAB button
+  fab: {
     width: 56,
     height: 56,
     borderRadius: 28,
     backgroundColor: "#0a7ea4",
     justifyContent: "center",
     alignItems: "center",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    // iOS shadow needs to be on the view that has the background
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 8,
+      }
+    })
   },
-  floatingButtonText: {
+  fabText: {
     color: "white",
     fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+    // Fix alignment issues on iOS
+    marginTop: Platform.OS === 'ios' ? -2 : 0,
   },
 });

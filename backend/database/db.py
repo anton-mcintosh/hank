@@ -76,7 +76,7 @@ class WorkOrderDB(Base):
 
 # Create database tables
 def init_db():
-    Base.metadata.drop_all(bind=engine)  # Drop all tables (for development)
+    # Base.metadata.drop_all(bind=engine)  # Drop all tables (for development)
     Base.metadata.create_all(bind=engine)
 
 

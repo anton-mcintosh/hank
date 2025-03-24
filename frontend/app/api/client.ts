@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 const API_URL = {
   // Use localhost for iOS simulator, 10.0.2.2 for Android emulator
   development: Platform.OS === 'ios' 
-    ? 'http://localhost:8000/api/v1' 
+    ? 'http://192.168.0.43:8000/api/v1' 
     : 'http://10.0.2.2:8000/api/v1',
   production: 'https://your-api-domain.com/api/v1'
 };
