@@ -97,14 +97,25 @@ export default function PDFViewer({
   const getSourceUrl = () => {
     if (!pdfUrl) return '';
     
+    const constructedUrl = !pdfUrl ? '' :
+      pdfUrl.startsWith('http') ? pdfUrl :
+        `${baseApiUrl}${pdfUrl.startsWith('/') ? '' : '/'}${pdfUrl}`;
+    console.log("PDF Viewer Url:", {
+      baseApiUrl,
+      pdfUrl,
+      constructedUrl
+    });
     // If it's already a full URL, use it
     if (pdfUrl.startsWith('http')) {
       return pdfUrl;
     }
+
+    if (pdfUrl.startsWith('/')) {
+      return `${baseApiUrl}${pdfUrl}`;
     
     // Otherwise, construct a full URL
     return `${baseApiUrl}${pdfUrl.startsWith('/') ? '' : '/'}${pdfUrl}`;
-  };
+  }};
 
   return (
     <Modal

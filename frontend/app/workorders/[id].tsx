@@ -97,7 +97,7 @@ export default function WorkorderDetailScreen() {
           onPress: async () => {
             try {
               await api.invoices.generateInvoice(workOrderId, {
-                generate_pdf: true,
+                generate_pdf: false,
                 send_email: false
               });
               Alert.alert("Success", "Invoice generated successfully");
@@ -123,7 +123,7 @@ export default function WorkorderDetailScreen() {
           onPress: async () => {
             try {
               await api.invoices.generateEstimate(workOrderId, {
-                generate_pdf: true,
+                generate_pdf: false,
                 send_email: false
               });
               Alert.alert("Success", "Estimate generated successfully");

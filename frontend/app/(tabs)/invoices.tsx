@@ -179,8 +179,12 @@ export default function InvoicesScreen() {
       }
       
       // Check if PDF was generated successfully
-      if (response && response.pdf_path) {
-        setCurrentPdfUrl(response.pdf_path);
+      if (response.pdf_path) {
+        let filename = response.pdf_path.split('/').pop();
+        console.log(filename);
+        const pdfUrl = `/api/v1/invoices/${filename}`;
+        console.log(pdfUrl);
+        setCurrentPdfUrl(pdfUrl);
         setPdfModalVisible(true);
       } else {
         throw new Error('PDF generation failed. No PDF path returned.');
