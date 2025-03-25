@@ -217,8 +217,12 @@ export default function InvoicesScreen() {
         : "No vehicle info";
     
     return (
-      <TouchableOpacity 
+      <ThemedView
         style={styles.invoiceCard}
+        lightColor="#ffffff"
+        darkColor="#333333"
+        >
+      <TouchableOpacity 
         onPress={() => router.push(`/workorders/${item.id}`)}
       >
         <View style={styles.invoiceHeader}>
@@ -269,6 +273,7 @@ export default function InvoicesScreen() {
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
+      </ThemedView>
     );
   };
 
@@ -299,7 +304,10 @@ export default function InvoicesScreen() {
       <ThemedView style={styles.container}>
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
+          <View style={styles.searchInputContainer}
+            lightColor="#f5f5f5"
+            darkColor="#333333"
+            >
             <Ionicons name="search" size={20} color="#687076" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
@@ -440,7 +448,6 @@ const styles = StyleSheet.create({
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     paddingHorizontal: 12,
     height: 44,
@@ -483,7 +490,6 @@ const styles = StyleSheet.create({
   },
   invoiceCard: {
     padding: 16,
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
   },
   invoiceHeader: {

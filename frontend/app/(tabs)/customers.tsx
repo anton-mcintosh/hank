@@ -16,6 +16,7 @@ import ThemedText from "../components/ThemedText";
 import ThemedView from "../components/ThemedView";
 import api from "../api";
 import { Customer } from "../api/types";
+import { styles } from "../constants/PageStyles";
 
 export default function CustomersScreen() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -55,6 +56,11 @@ export default function CustomersScreen() {
 
   // Render a customer card
   const renderCustomer = ({ item }: { item: Customer }) => (
+    <ThemedView
+      style={styles.customerCard}
+      lightColor="#ffffff"
+      darkColor="#333333"
+      >
     <TouchableOpacity 
       style={styles.customerCard}
       onPress={() => router.push(`/customers/${item.id}`)}
@@ -65,6 +71,7 @@ export default function CustomersScreen() {
       <ThemedText>{item.phone}</ThemedText>
       <ThemedText>{item.email}</ThemedText>
     </TouchableOpacity>
+    </ThemedView>
   );
 
   // Floating action button component
@@ -146,106 +153,3 @@ export default function CustomersScreen() {
 
 // Get screen dimensions for positioning
 const { width, height } = Dimensions.get('window');
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  container: {
-    flex: 1,
-    position: 'relative',
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  listContent: {
-    padding: 16,
-    // Add bottom padding to ensure the last item isn't covered by the FAB
-    paddingBottom: 80,
-  },
-  customerCard: {
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: "#f5f5f5",
-  },
-  separator: {
-    height: 12,
-  },
-  loadingText: {
-    marginTop: 8,
-  },
-  errorText: {
-    color: "red",
-    marginBottom: 16,
-  },
-  retryButton: {
-    padding: 12,
-    backgroundColor: "#0a7ea4",
-    borderRadius: 4,
-  },
-  retryText: {
-    color: "white",
-  },
-  addButton: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: "#0a7ea4",
-    borderRadius: 4,
-  },
-  addButtonText: {
-    color: "white",
-  },
-  // FAB container to enforce proper positioning
-  fabContainer: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 80 : 24, // Higher position on iOS for safe area
-    right: 24,
-    // Higher z-index for iOS to ensure visibility
-    zIndex: 9999,
-    elevation: Platform.OS === 'android' ? 8 : 0,
-    // Ensure it's rendered
-    width: 56,
-    height: 56,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-      }
-    })
-  },
-  // Actual FAB button
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#0a7ea4",
-    justifyContent: "center",
-    alignItems: "center",
-    // iOS shadow needs to be on the view that has the background
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 8,
-      }
-    })
-  },
-  fabText: {
-    color: "white",
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-    // Fix alignment issues on iOS
-    marginTop: Platform.OS === 'ios' ? -2 : 0,
-  },
-});

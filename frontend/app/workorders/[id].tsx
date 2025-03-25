@@ -209,7 +209,11 @@ export default function WorkorderDetailScreen() {
         </ThemedView>
         
         {/* Customer Info Section */}
-        <ThemedView style={styles.section}>
+        <ThemedView 
+          style={styles.section}
+          lightColor="#ffffff"
+          darkColor="#333333"
+        >
           <ThemedText type="subtitle">Customer Information</ThemedText>
           
           <TouchableOpacity 
@@ -229,7 +233,11 @@ export default function WorkorderDetailScreen() {
         </ThemedView>
         
         {/* Vehicle Section */}
-        <ThemedView style={styles.section}>
+        <ThemedView 
+          style={styles.section}
+          lightColor="#ffffff"
+          darkColor="#333333"
+        >
           <ThemedText type="subtitle">Vehicle Information</ThemedText>
           
           <TouchableOpacity 
@@ -256,16 +264,28 @@ export default function WorkorderDetailScreen() {
         </ThemedView>
         
         {/* Work Summary Section */}
-        <ThemedView style={styles.section}>
+        <ThemedView 
+          style={styles.section}
+          lightColor="#ffffff"
+          darkColor="#333333"
+        >
           <ThemedText type="subtitle">Work Summary</ThemedText>
           
-          <ThemedView style={styles.summaryCard}>
+          <ThemedView 
+            style={styles.summaryCard}
+            lightColor="#f0f0f0"
+            darkColor="#444444"
+          >
             <ThemedText>{workOrder.work_summary || "No work summary available"}</ThemedText>
           </ThemedView>
         </ThemedView>
         
         {/* Line Items Section */}
-        <ThemedView style={styles.section}>
+        <ThemedView 
+          style={styles.section}
+          lightColor="#ffffff"
+          darkColor="#333333"
+        >
           <ThemedText type="subtitle">Line Items</ThemedText>
           
           {workOrder.line_items.length === 0 ? (
@@ -273,13 +293,26 @@ export default function WorkorderDetailScreen() {
           ) : (
             <View>
               {workOrder.line_items.map((item: LineItem, index: number) => (
-                <ThemedView key={index} style={styles.lineItemCard}>
-                  <ThemedView style={styles.lineItemHeader}>
+                <ThemedView 
+                    key={index} 
+                    style={styles.lineItemCard}
+                    lightColor="#ffffff"
+                    darkColor="#333333"
+                  >
+                  <ThemedView 
+                      style={styles.lineItemHeader}
+                      lightColor="#f0f0f0"
+                      darkColor="#444444"
+                    >
                     <ThemedText type="defaultSemiBold">{item.description}</ThemedText>
                     <ThemedText style={styles.itemType}>{item.type.toUpperCase()}</ThemedText>
                   </ThemedView>
                   
-                  <ThemedView style={styles.lineItemDetails}>
+                  <ThemedView 
+                      style={styles.lineItemDetails}
+                      lightColor="#ffffff"
+                      darkColor="#333333"
+                    >
                     <ThemedText>Qty: {item.quantity}</ThemedText>
                     <ThemedText>Unit: ${item.unit_price.toFixed(2)}</ThemedText>
                     <ThemedText style={styles.lineItemTotal}>Total: ${item.total.toFixed(2)}</ThemedText>
@@ -288,18 +321,34 @@ export default function WorkorderDetailScreen() {
               ))}
               
               {/* Totals Section */}
-              <ThemedView style={styles.totalsCard}>
-                <ThemedView style={styles.totalRow}>
+              <ThemedView 
+                  style={styles.totalsCard}
+                  lightColor="#f0f0f0"
+                  darkColor="#444444"
+                >
+                <ThemedView 
+                    style={styles.totalRow}
+                    lightColor="#ffffff"
+                    darkColor="#333333"
+                  >
                   <ThemedText>Parts Total:</ThemedText>
                   <ThemedText>${workOrder.total_parts.toFixed(2)}</ThemedText>
                 </ThemedView>
                 
-                <ThemedView style={styles.totalRow}>
+                <ThemedView 
+                    style={styles.totalRow}
+                    lightColor="#ffffff"
+                    darkColor="#333333"
+                  >
                   <ThemedText>Labor Total:</ThemedText>
                   <ThemedText>${workOrder.total_labor.toFixed(2)}</ThemedText>
                 </ThemedView>
                 
-                <ThemedView style={[styles.totalRow, styles.grandTotalRow]}>
+                <ThemedView 
+                    style={[styles.totalRow, styles.grandTotalRow]}
+                    lightColor="#ffffff"
+                    darkColor="#333333"
+                  >
                   <ThemedText type="defaultSemiBold">GRAND TOTAL:</ThemedText>
                   <ThemedText type="defaultSemiBold">${workOrder.total.toFixed(2)}</ThemedText>
                 </ThemedView>
@@ -375,19 +424,16 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     padding: 16,
-    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     marginTop: 8,
   },
   summaryCard: {
     padding: 16,
-    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     marginTop: 8,
   },
   lineItemCard: {
     padding: 16,
-    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     marginTop: 8,
   },
@@ -411,7 +457,6 @@ const styles = StyleSheet.create({
   },
   totalsCard: {
     padding: 16,
-    backgroundColor: "#f0f0f0",
     borderRadius: 8,
     marginTop: 16,
   },
