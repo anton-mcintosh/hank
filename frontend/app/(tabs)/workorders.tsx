@@ -21,6 +21,7 @@ import { styles } from "../constants/PageStyles";
 export default function WorkordersScreen() {
   const [workorders, setWorkorders] = useState<WorkOrder[]>([]);
   const [customerName, setCustomerName] = useState<string>('');
+  const [customersMap, setCustomersMap] = useState<Record<string, string>>({});
   const [vehiclesMap, setVehiclesMap] = useState<Record<string, Vehicle>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,14 +45,21 @@ export default function WorkordersScreen() {
       const data = await api.workorders.getAll();
       setWorkorders(data);
 
-      // Get customer's first name for car display
-      const names = data.map(wo => wo.customer_id as string);
-      try {
-        const customer = await api.customers.getById(names[0]);
-        setCustomerName(`${customer.first_name}`);
-      } catch (err) {
-        console.warn(`Failed to load customer ${names[0]}:`, err);
+      const customerIds = [...new Set(
+        data
+          .filter(wo => wo.customer_id) // Filter out work orders without a customer_id
+          .map(wo => wo.customer_id as string) // Extract customer_ids
+      )];
+      const customerMap: Record<string, any> = {};
+      for (const customerId of customerIds) {
+        try {
+          const customer = await api.customers.getById(customerId);
+          customerMap[customerId] = customer;
+        } catch (err) {
+          console.warn('Failed to load customer', customerId, err);
+        }
       }
+      setCustomersMap(customerMap);
       
       // Load vehicle data for each work order with a vehicle_id
       const vehicleIds = data
@@ -91,6 +99,11 @@ export default function WorkordersScreen() {
 
   // Render a work order card
   const renderWorkorder = ({ item }: { item: WorkOrder }) => {
+    let customerName = "Customer";
+    if (item.customer_id && customersMap[item.customer_id]) {
+      const customer = customersMap[item.customer_id];
+      customerName = customer.first_name;
+    }
     // Get vehicle if available
     const vehicle = item.vehicle_id ? vehiclesMap[item.vehicle_id] : undefined;
     let vehicleDisplay = "No vehicle information";

@@ -25,6 +25,12 @@ os.makedirs(INVOICE_DIR, exist_ok=True)
 # Initialize FastAPI app
 app = FastAPI(title="Auto Shop Work Order API")
 
+allowed_origins = [
+    "http://localhost:8081",
+    "http://localhost:19006",
+    "exp://localhost:19006",  # Expo Go
+    "192.168.0.3:*",
+]
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,

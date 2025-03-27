@@ -423,8 +423,8 @@ export default function InvoicesScreen() {
           pdfUrl={currentPdfUrl}
           title={pdfTitle}
           baseApiUrl={Platform.OS === 'ios' 
-            ? 'http://localhost:8000' 
-            : 'http://10.0.2.2:8000'}
+            ? 'http://192.168.0.43:8000' 
+            : 'http://192.168.0.43:8000'}
         />
       </ThemedView>
     </SafeAreaView>

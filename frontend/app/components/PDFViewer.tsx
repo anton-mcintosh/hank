@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Modal, 
   View, 
@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Platform,
   Alert,
-  Linking,
   SafeAreaView
 } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -36,6 +35,28 @@ export default function PDFViewer({
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const webViewRef = useRef(null);
+  
+  // Add a force timeout to hide the spinner after a set time
+  useEffect(() => {
+    if (visible && loading) {
+      // Force hide the loading spinner after 8 seconds regardless
+      const timeout = setTimeout(() => {
+        console.log('Forcing loading spinner to hide after timeout');
+        setLoading(false);
+      }, 8000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [visible, loading]);
+
+  // Reset loading state when the modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      setLoading(true);
+      setError(null);
+    }
+  }, [visible]);
 
   // Function to download the PDF
   const downloadPDF = async () => {
@@ -46,9 +67,7 @@ export default function PDFViewer({
     
     try {
       // The pdfUrl might be a relative path, so we need to construct the full URL
-      const fullUrl = pdfUrl.startsWith('http') 
-        ? pdfUrl 
-        : `${baseApiUrl}${pdfUrl.startsWith('/') ? '' : '/'}${pdfUrl}`;
+      const fullUrl = getSourceUrl();
 
       // Get filename from URL
       const filename = pdfUrl.split('/').pop() || 'invoice.pdf';
@@ -69,7 +88,10 @@ export default function PDFViewer({
 
       // Download the file
       const downloadPath = downloadDirectory + filename;
+      console.log('Downloading to:', downloadPath);
+      
       const downloadResult = await FileSystem.downloadAsync(fullUrl, downloadPath);
+      console.log('Download result:', downloadResult);
 
       if (downloadResult.status === 200) {
         // Share the file
@@ -93,29 +115,109 @@ export default function PDFViewer({
     }
   };
 
-  // Determine the source URL for the WebView
+  // Properly fixed getSourceUrl function with detailed logging
   const getSourceUrl = () => {
-    if (!pdfUrl) return '';
+    if (!pdfUrl) {
+      console.log('No PDF URL provided');
+      return '';
+    }
     
-    const constructedUrl = !pdfUrl ? '' :
-      pdfUrl.startsWith('http') ? pdfUrl :
-        `${baseApiUrl}${pdfUrl.startsWith('/') ? '' : '/'}${pdfUrl}`;
-    console.log("PDF Viewer Url:", {
-      baseApiUrl,
-      pdfUrl,
-      constructedUrl
-    });
     // If it's already a full URL, use it
     if (pdfUrl.startsWith('http')) {
+      console.log('Using full URL:', pdfUrl);
       return pdfUrl;
     }
-
-    if (pdfUrl.startsWith('/')) {
-      return `${baseApiUrl}${pdfUrl}`;
     
-    // Otherwise, construct a full URL
-    return `${baseApiUrl}${pdfUrl.startsWith('/') ? '' : '/'}${pdfUrl}`;
-  }};
+    // Make sure baseApiUrl doesn't end with a slash
+    const apiUrl = baseApiUrl.endsWith('/') ? baseApiUrl.slice(0, -1) : baseApiUrl;
+    
+    // Make sure pdfUrl starts with a slash
+    const apiPath = pdfUrl.startsWith('/') ? pdfUrl : `/${pdfUrl}`;
+    
+    const fullUrl = `${apiUrl}${apiPath}`;
+    console.log("Full PDF Viewer URL:", fullUrl);
+    
+    return fullUrl;
+  };
+
+  // This JavaScript will inject a button to manually hide the spinner
+  // This is a fallback if automatic loading detection fails
+  const injectedJavaScript = `
+    // Create a floating action button to hide the spinner
+    const createHideLoadingButton = () => {
+      const btn = document.createElement('button');
+      btn.textContent = 'PDF Loaded';
+      btn.style.position = 'fixed';
+      btn.style.bottom = '20px';
+      btn.style.right = '20px';
+      btn.style.padding = '10px';
+      btn.style.backgroundColor = '#0a7ea4';
+      btn.style.color = 'white';
+      btn.style.borderRadius = '5px';
+      btn.style.border = 'none';
+      btn.style.zIndex = '9999';
+      btn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+      btn.onclick = () => {
+        window.ReactNativeWebView.postMessage('MANUALLY_LOADED');
+        btn.style.display = 'none';
+      };
+      document.body.appendChild(btn);
+    };
+    
+    // Wait a moment to make sure the DOM is ready
+    setTimeout(() => {
+      createHideLoadingButton();
+      window.ReactNativeWebView.postMessage('LOADED_HELPER_ADDED');
+    }, 2000);
+    
+    // Also notify when document is fully loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      window.ReactNativeWebView.postMessage('DOM_LOADED');
+    });
+    
+    window.addEventListener('load', () => {
+      window.ReactNativeWebView.postMessage('WINDOW_LOADED');
+      
+      // Check for common PDF elements
+      const hasPdfElements = document.querySelector('embed[type="application/pdf"], object[type="application/pdf"], iframe, canvas');
+      if (hasPdfElements) {
+        window.ReactNativeWebView.postMessage('PDF_ELEMENTS_FOUND');
+      }
+    });
+    
+    true;
+  `;
+
+  // Track loading progress
+  const handleLoadProgress = ({ nativeEvent }) => {
+    const { progress } = nativeEvent;
+    console.log(`WebView loading progress: ${progress * 100}%`);
+    
+    // When progress reaches 100%, we can be pretty confident the PDF is loaded
+    if (progress >= 1) {
+      // Add a small delay to make sure rendering is complete
+      setTimeout(() => {
+        setLoading(false);
+      }, 500);
+    }
+  };
+
+  // Handle messages from the WebView
+  const handleMessage = (event) => {
+    const message = event.nativeEvent.data;
+    console.log('Received message from WebView:', message);
+    
+    // Various events that might indicate the PDF is loaded
+    if (
+      message === 'DOM_LOADED' || 
+      message === 'WINDOW_LOADED' || 
+      message === 'PDF_ELEMENTS_FOUND' ||
+      message === 'MANUALLY_LOADED'
+    ) {
+      console.log('Hiding spinner based on WebView message');
+      setLoading(false);
+    }
+  };
 
   return (
     <Modal
@@ -136,8 +238,8 @@ export default function PDFViewer({
           </View>
           
           <TouchableOpacity 
-            onPress={downloadPDF} 
             style={styles.downloadButton}
+            onPress={downloadPDF}
             disabled={downloading || !pdfUrl}
           >
             {downloading ? (
@@ -171,18 +273,59 @@ export default function PDFViewer({
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#0a7ea4" />
                 <ThemedText style={styles.loadingText}>Loading PDF...</ThemedText>
+                
+                {/* Manual hide button if all else fails */}
+                <TouchableOpacity
+                  style={styles.manualHideButton}
+                  onPress={() => setLoading(false)}
+                >
+                  <ThemedText style={styles.manualHideText}>
+                    PDF Loaded? Tap Here
+                  </ThemedText>
+                </TouchableOpacity>
               </View>
             )}
             
             <WebView
+              ref={webViewRef}
               source={{ uri: getSourceUrl() }}
               style={styles.webView}
-              onLoadEnd={() => setLoading(false)}
-              onError={() => {
-                setLoading(false);
-                setError('Failed to load the PDF');
+              onLoadEnd={() => {
+                console.log('WebView onLoadEnd fired');
+                // Add a small delay to ensure rendering is complete
+                setTimeout(() => {
+                  setLoading(false);
+                }, 1000);
               }}
+              onLoadStart={() => console.log('WebView onLoadStart fired')}
+              onLoad={() => {
+                console.log('WebView onLoad fired - PDF should be loaded');
+                // This should fire when the PDF is loaded, but sometimes doesn't work
+                setTimeout(() => {
+                  setLoading(false);
+                }, 1000);
+              }}
+              onLoadProgress={handleLoadProgress}
+              onMessage={handleMessage}
+              onError={(syntheticEvent) => {
+                const { nativeEvent } = syntheticEvent;
+                console.error('WebView error:', nativeEvent);
+                setLoading(false);
+                setError(`Error loading PDF: ${nativeEvent.description || 'Unknown error'}`);
+              }}
+              onHttpError={(syntheticEvent) => {
+                const { nativeEvent } = syntheticEvent;
+                console.error('WebView HTTP error:', nativeEvent);
+                setLoading(false);
+                setError(`HTTP error ${nativeEvent.statusCode}: ${nativeEvent.description || 'Unknown error'}`);
+              }}
+              injectedJavaScript={injectedJavaScript}
               originWhitelist={['*']}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              startInLoadingState={true}
+              scalesPageToFit={Platform.OS === 'android'}
+              useWebKit={true}
             />
           </View>
         )}
@@ -244,6 +387,16 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
+    color: '#0a7ea4',
+  },
+  manualHideButton: {
+    marginTop: 24,
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+  },
+  manualHideText: {
     color: '#0a7ea4',
   },
   errorContainer: {

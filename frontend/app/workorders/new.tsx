@@ -325,6 +325,8 @@ export default function NewWorkOrderScreen() {
               <TouchableOpacity
                 key={customer.id}
                 style={styles.customerCard}
+                lightColor="#ffffff"
+                darkColor="#333333"
                 onPress={() => handleSelectCustomer(customer)}
               >
                 <ThemedText type="defaultSemiBold">
@@ -355,6 +357,8 @@ export default function NewWorkOrderScreen() {
           <ThemedText type="subtitle">Customer</ThemedText>
           <TouchableOpacity 
             style={styles.selectedCustomerCard}
+            lightColor="#ffffff"
+            darkColor="#333333"
             onPress={() => setStep(1)} // Go back to customer selection
           >
             <ThemedText type="defaultSemiBold">
@@ -494,7 +498,10 @@ export default function NewWorkOrderScreen() {
           
           {/* Recordings List */}
           {audioRecordings.length > 0 && (
-            <ThemedView style={styles.recordingsList}>
+            <ThemedView style={styles.recordingsList}
+              lightColor="#ffffff"
+              darkColor="#333333"
+            >
               <ThemedText type="defaultSemiBold" style={styles.recordingsTitle}>
                 Recordings ({audioRecordings.length})
               </ThemedText>
@@ -586,13 +593,11 @@ const styles = StyleSheet.create({
   },
   customerCard: {
     padding: 16,
-    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     marginBottom: 12,
   },
   selectedCustomerCard: {
     padding: 16,
-    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     marginTop: 8,
     flexDirection: "row",
@@ -720,7 +725,6 @@ const styles = StyleSheet.create({
   },
   recordingsList: {
     marginTop: 16,
-    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     padding: 16,
   },
