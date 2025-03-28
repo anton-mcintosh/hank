@@ -557,7 +557,11 @@ export default function NewWorkOrderScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: "New Work Order" }} />
+      <Stack.Screen options={{ 
+        title: "New Work Order",
+        headerBackTitle: "Back",
+        headerBackButtonDisplay: "minimal",
+      }} />
       
       {step === 1 ? renderCustomerSelection() : renderDataCollection()}
     </ThemedView>

@@ -56,7 +56,11 @@ export default function NewCustomerScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: "New Customer" }} />
+      <Stack.Screen options={{ 
+        title: "New Customer",
+        headerBackTitle: "Back",
+        headerBackButtonDisplay: "minimal",
+      }} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <ThemedText style={styles.label}>First Name *</ThemedText>
         <TextInput
