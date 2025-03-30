@@ -3,28 +3,102 @@ from sqlalchemy.orm import Session
 from typing import List
 import uuid
 from datetime import datetime
-
+from fastapi import UploadFile, File
+import aiofiles
 from api.models import Customer, CustomerCreate, CustomerUpdate
 from database.db import get_db
 from database.repos import CustomerRepository, VehicleRepository
 
 router = APIRouter()
 
+
 @router.post("/customers", response_model=Customer)
 async def create_customer(customer: CustomerCreate, db: Session = Depends(get_db)):
-
     existing = CustomerRepository.get_by_email(db, customer.email)
     if existing:
-        raise HTTPException(status_code=400, detail="Customer with this email already exists")
-    
-    customer_data = customer.dict()
+        raise HTTPException(
+            status_code=400, detail="Customer with this email already exists"
+        )
+
+    customer_data = customer.model_dump()
     customer_data["id"] = str(uuid.uuid4())
     customer_data["created_at"] = datetime.now()
     customer_data["updated_at"] = datetime.now()
-    
+
     return CustomerRepository.create(db, customer_data)
 
-@router.get("/customers/{customer_id}", response_model=Customer)
+
+@router.post("/customers-image", response_model=Customer)
+async def create_customer_image(
+    customer_image: UploadFile = File(None),
+    db: Session = Depends(get_db),
+):
+    """Create a customer from an image"""
+    try:
+        # Validate image file
+        if not customer_image:
+            raise HTTPException(status_code=400, detail="Customer image is required")
+
+        # Create a temporary file to store the uploaded image
+        import os
+        from services.image import extract_customer_info_from_image
+
+        # Ensure upload directory exists
+        UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
+        os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
+
+        # Save the uploaded file
+        file_path = os.path.join(
+            UPLOAD_DIR,
+            "images",
+            f"customer_{uuid.uuid4()}{os.path.splitext(customer_image.filename)[1]}",
+        )
+
+        # Read file content and save to disk
+        content = await customer_image.read()
+        async with aiofiles.open(file_path, "wb") as f:
+            await f.write(content)
+
+        # Extract customer info from image using Vision API
+        customer_info = await extract_customer_info_from_image(file_path)
+
+        if not customer_info:
+            raise HTTPException(
+                status_code=422,
+                detail="Could not extract customer information from image",
+            )
+
+        # Create customer data
+        customer_data = {
+            "id": str(uuid.uuid4()),
+            "first_name": customer_info.get("first_name", ""),
+            "last_name": customer_info.get("last_name", ""),
+            "email": customer_info.get("email", ""),
+            "phone": customer_info.get("phone", ""),
+            "address": customer_info.get("address", ""),
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
+        }
+
+        # Check if email exists and is valid
+        if customer_data["email"]:
+            existing = CustomerRepository.get_by_email(db, customer_data["email"])
+            if existing:
+                raise HTTPException(
+                    status_code=400, detail="Customer with this email already exists"
+                )
+
+        # Create the customer
+        return CustomerRepository.create(db, customer_data)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error creating customer from image: {str(e)}"
+        ) @ router.get("/customers/{customer_id}", response_model=Customer)
+
+
 async def get_customer(customer_id: str, db: Session = Depends(get_db)):
     """Get a customer by ID"""
     customer = CustomerRepository.get_by_id(db, customer_id)
@@ -32,10 +106,12 @@ async def get_customer(customer_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Customer not found")
     return customer
 
+
 @router.get("/customers", response_model=List[Customer])
 async def list_customers(db: Session = Depends(get_db)):
     """List all customers"""
     return CustomerRepository.get_all(db)
+
 
 @router.put("/customers/{customer_id}", response_model=Customer)
 async def update_customer(
@@ -48,6 +124,7 @@ async def update_customer(
     if not updated_customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     return updated_customer
+
 
 @router.delete("/customers/{customer_id}")
 async def delete_customer(customer_id: str, db: Session = Depends(get_db)):

@@ -28,6 +28,7 @@ export default function NewWorkOrderScreen() {
   const [loading, setLoading] = useState(false);
   const [customersLoading, setCustomersLoading] = useState(true);
   const [vinImage, setVinImage] = useState<any>(null);
+  const [plateImage, setPlateImage] = useState<any>(null);
   const [odometerImage, setOdometerImage] = useState<any>(null);
   const [audioRecordings, setAudioRecordings] = useState<any[]>([]);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -90,7 +91,7 @@ export default function NewWorkOrderScreen() {
     router.push("/customers/new?returnTo=workorders/new");
   };
 
-  const pickImage = async (type: 'vin' | 'odometer') => {
+  const pickImage = async (type: 'vin' | 'plate' | 'odometer') => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -112,6 +113,9 @@ export default function NewWorkOrderScreen() {
 
         if (type === 'vin') {
           setVinImage(file);
+        }
+        if (type === 'plate') {
+          setPlateImage(file);
         } else {
           setOdometerImage(file);
         }
@@ -122,7 +126,7 @@ export default function NewWorkOrderScreen() {
     }
   };
 
-  const takePhoto = async (type: 'vin' | 'odometer') => {
+  const takePhoto = async (type: 'vin' | 'plate' | 'odometer') => {
     try {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -144,6 +148,9 @@ export default function NewWorkOrderScreen() {
 
         if (type === 'vin') {
           setVinImage(file);
+        }
+        if (type === 'plate') {
+          setPlateImage(file);
         } else {
           setOdometerImage(file);
         }
@@ -276,6 +283,7 @@ export default function NewWorkOrderScreen() {
         customer_id: selectedCustomer.id,
         audio_files: audioRecordings,
         vin_image: vinImage,
+        plate_image: plateImage,
         odometer_image: odometerImage,
       };
 
@@ -403,6 +411,48 @@ export default function NewWorkOrderScreen() {
               <TouchableOpacity 
                 style={[styles.imageButton, styles.uploadButton]}
                 onPress={() => pickImage('vin')}
+              >
+                <FontAwesome5 name="image" size={20} color="#fff" />
+                <ThemedText style={styles.imageButtonText}>Upload Image</ThemedText>
+              </TouchableOpacity>
+            </ThemedView>
+          )}
+        </ThemedView>
+
+        {/* Plate Image */}
+        <ThemedView style={styles.section}>
+          <ThemedText type="subtitle">Vehicle License Plate</ThemedText>
+          <ThemedText style={styles.instruction}>
+            Take a phonto of the vehicle's license plate
+          </ThemedText>
+          
+          {plateImage ? (
+            <ThemedView style={styles.imagePreviewContainer}>
+              <ThemedView style={styles.imagePlaceholder}>
+                <ThemedText style={styles.previewText}>License plage image selected</ThemedText>
+                <FontAwesome5 name="check-circle" size={24} color="green" />
+              </ThemedView>
+              <TouchableOpacity 
+                style={styles.removeButton}
+                onPress={() => handleRemoveImage('plate')}
+              >
+                <MaterialIcons name="delete" size={20} color="red" />
+                <ThemedText style={styles.removeButtonText}>Remove</ThemedText>
+              </TouchableOpacity>
+            </ThemedView>
+          ) : (
+            <ThemedView style={styles.imageButtonsContainer}>
+              <TouchableOpacity 
+                style={styles.imageButton}
+                onPress={() => takePhoto('plate')}
+              >
+                <FontAwesome5 name="camera" size={20} color="#fff" />
+                <ThemedText style={styles.imageButtonText}>Take Photo</ThemedText>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.imageButton, styles.uploadButton]}
+                onPress={() => pickImage('plate')}
               >
                 <FontAwesome5 name="image" size={20} color="#fff" />
                 <ThemedText style={styles.imageButtonText}>Upload Image</ThemedText>

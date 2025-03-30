@@ -23,6 +23,12 @@ const customersApi = {
     return api.post<Customer>('/customers', customer);
   },
 
+  createFromImage: (imageFile: File) => {
+    const formData = new FormData();
+    formData.append('customer_image', imageFile);
+    
+    return api.upload<Customer>('/customers-image', formData);
+  },
   /**
    * Update a customer
    */

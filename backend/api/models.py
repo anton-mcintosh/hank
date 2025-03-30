@@ -42,6 +42,7 @@ class VehicleBase(BaseModel):
     id: str
     customer_id: str
     vin: Optional[str] = None
+    plate: Optional[str] = None
     year: Optional[int] = None
     make: Optional[str] = None
     model: Optional[str] = None
@@ -57,6 +58,7 @@ class VehicleCreate(VehicleBase):
 class VehicleUpdate(BaseModel):
     customer_id: Optional[str] = None
     vin: Optional[str] = None
+    plate: Optional[str] = None
     year: Optional[int] = None
     make: Optional[str] = None
     model: Optional[str] = None

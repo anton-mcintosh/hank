@@ -46,6 +46,7 @@ class VehicleDB(Base):
     id = Column(String, primary_key=True, index=True)
     customer_id = Column(String, ForeignKey("customers.id"))
     vin = Column(String, index=True, nullable=True)
+    plate = Column(String, nullable=True)
     year = Column(Integer, nullable=True)
     make = Column(String, nullable=True)
     model = Column(String, nullable=True)
