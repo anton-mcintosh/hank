@@ -8,10 +8,12 @@ import {
   RefreshControl,
   Platform,
   Dimensions,
-  SafeAreaView
+  SafeAreaView,
+  Alert
 } from "react-native";
 import { router } from "expo-router";
 
+import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import ThemedText from "../components/ThemedText";
 import ThemedView from "../components/ThemedView";
 import api from "../api";
@@ -55,25 +57,60 @@ export default function CustomersScreen() {
   };
 
   // Render a customer card
-  const renderCustomer = ({ item }: { item: Customer }) => (
-    <ThemedView
-      style={styles.customerCard}
-      lightColor="#ffffff"
-      darkColor="#333333"
-      >
-    <TouchableOpacity 
-      style={styles.customerCard}
-      onPress={() => router.push(`/customers/${item.id}`)}
-    >
-      <ThemedText type="defaultSemiBold">
-        {item.first_name} {item.last_name}
-      </ThemedText>
-      <ThemedText>{item.phone}</ThemedText>
-      <ThemedText>{item.email}</ThemedText>
-    </TouchableOpacity>
-    </ThemedView>
-  );
+// Replace your existing renderCustomer function with this version
+// It just adds a trash icon that handles deletion
 
+const renderCustomer = ({ item }: { item: Customer }) => (
+  <ThemedView
+    style={styles.customerCard}
+    lightColor="#ffffff"
+    darkColor="#333333"
+  >
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <TouchableOpacity 
+        style={{ flex: 1, padding: 16 }}
+        onPress={() => router.push(`/customers/${item.id}`)}
+      >
+        <ThemedText type="defaultSemiBold">
+          {item.first_name} {item.last_name}
+        </ThemedText>
+        <ThemedText>{item.phone}</ThemedText>
+        <ThemedText>{item.email}</ThemedText>
+      </TouchableOpacity>
+      
+      <TouchableOpacity 
+        style={{ padding: 16 }}
+        onPress={() => handleDeleteCustomer(item.id, `${item.first_name} ${item.last_name}`)}
+      >
+        <FontAwesome5 name="trash" size={16} color="#FF3B30" />
+      </TouchableOpacity>
+    </View>
+  </ThemedView>
+);
+
+// Add this function to handle the delete action
+const handleDeleteCustomer = (customerId: string, customerName: string) => {
+  Alert.alert(
+    "Delete Customer",
+    `Are you sure you want to delete ${customerName}?`,
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await api.customers.delete(customerId);
+            // Remove from local state after successful deletion
+            setCustomers(prev => prev.filter(c => c.id !== customerId));
+          } catch (err: any) {
+            Alert.alert("Error", err.message || "Failed to delete customer");
+          }
+        }
+      }
+    ]
+  );
+};
   // Floating action button component
   const FloatingActionButton = () => (
     <View style={styles.fabContainer}>

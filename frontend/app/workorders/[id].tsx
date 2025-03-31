@@ -189,6 +189,7 @@ export default function WorkorderDetailScreen() {
       <Stack.Screen 
         options={{ 
           title: `Work Order #${workOrder.id.slice(0, 8)}`,
+          headerBackTitle: "Back",
           headerRight: () => (
             <TouchableOpacity onPress={() => router.push(`/workorders/edit/${workOrderId}`)}>
               <ThemedText style={styles.editButton}>Edit</ThemedText>

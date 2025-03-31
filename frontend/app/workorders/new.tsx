@@ -116,7 +116,8 @@ export default function NewWorkOrderScreen() {
         }
         if (type === 'plate') {
           setPlateImage(file);
-        } else {
+        } 
+        if (type === 'odometer') {
           setOdometerImage(file);
         }
       }

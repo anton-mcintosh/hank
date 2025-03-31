@@ -5,11 +5,67 @@ import uuid
 from datetime import datetime
 from fastapi import UploadFile, File
 import aiofiles
-from api.models import Customer, CustomerCreate, CustomerUpdate
+from api.models import Customer, CustomerCreate, CustomerUpdate, CustomerBase
 from database.db import get_db
 from database.repos import CustomerRepository, VehicleRepository
 
 router = APIRouter()
+
+
+@router.post("/extract-customer-info", response_model=CustomerBase)
+async def extract_customer_info(
+    customer_image: UploadFile = File(None),
+):
+    """Extract customer info from an image without creating the customer"""
+    try:
+        # Validate image file
+        if not customer_image:
+            raise HTTPException(status_code=400, detail="Customer image is required")
+
+        # Create a temporary file to store the uploaded image
+        import os
+        from services.image import extract_customer_info_from_image
+
+        # Ensure upload directory exists
+        UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
+        os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
+
+        # Save the uploaded file
+        file_path = os.path.join(
+            UPLOAD_DIR,
+            "images",
+            f"customer_{uuid.uuid4()}{os.path.splitext(customer_image.filename)[1]}",
+        )
+
+        # Read file content and save to disk
+        content = await customer_image.read()
+        async with aiofiles.open(file_path, "wb") as f:
+            await f.write(content)
+
+        # Extract customer info from image using Vision API
+        customer_info = await extract_customer_info_from_image(file_path)
+
+        if not customer_info:
+            raise HTTPException(
+                status_code=422,
+                detail="Could not extract customer information from image",
+            )
+
+        # Return the extracted customer info without creating in database
+        return {
+            "first_name": customer_info.get("first_name", ""),
+            "last_name": customer_info.get("last_name", ""),
+            "email": customer_info.get("email", ""),
+            "phone": customer_info.get("phone", ""),
+            "address": customer_info.get("address", ""),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error extracting customer info from image: {str(e)}",
+        )
 
 
 @router.post("/customers", response_model=Customer)
@@ -134,3 +190,12 @@ async def delete_customer(customer_id: str, db: Session = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="Customer not found")
     return {"message": "Customer deleted"}
+
+
+@router.get("/customers/{customer_id}", response_model=Customer)
+async def get_customer(customer_id: str, db: Session = Depends(get_db)):
+    """Get a customer by ID"""
+    customer = CustomerRepository.get_by_id(db, customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return customer

@@ -119,48 +119,47 @@ export default function NewCustomerScreen() {
   };
 
   // Function to extract customer info from image
-  const extractCustomerInfo = async (imageFile) => {
-    setExtracting(true);
-    try {
-      // Create form data with the image
-      const formData = new FormData();
-      formData.append('customer_image', imageFile);
-      
-      // Make API request
-      const response = await fetch('http://192.168.0.43:8000/api/v1/customers-image', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to extract customer information');
-      }
-      
-      // Get the response data
-      const customerData = await response.json();
-      
-      // Update form with extracted data
-      setCustomer({
-        first_name: customerData.first_name,
-        last_name: customerData.last_name,
-        email: customerData.email,
-        phone: customerData.phone,
-        address: customerData.address,
-      });
-      
-      Alert.alert('Success', 'Customer information extracted successfully!');
-    } catch (error) {
-      console.error('Error extracting customer info:', error);
-      Alert.alert('Error', error.message || 'Failed to extract customer information');
-    } finally {
-      setExtracting(false);
+const extractCustomerInfo = async (imageFile) => {
+  setExtracting(true);
+  try {
+    // Create form data with the image
+    const formData = new FormData();
+    formData.append('customer_image', imageFile);
+    
+    // Make API request to the extraction-only endpoint
+    const response = await fetch('http://192.168.0.43:8000/api/v1/extract-customer-info', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to extract customer information');
     }
-  };
-
+    
+    // Get the response data
+    const customerData = await response.json();
+    
+    // Update form with extracted data
+    setCustomer({
+      first_name: customerData.first_name,
+      last_name: customerData.last_name,
+      email: customerData.email,
+      phone: customerData.phone,
+      address: customerData.address,
+    });
+    
+    Alert.alert('Success', 'Customer information extracted and populated in form. Review and click "Create Customer" to save.');
+  } catch (error) {
+    console.error('Error extracting customer info:', error);
+    Alert.alert('Error', error.message || 'Failed to extract customer information');
+  } finally {
+    setExtracting(false);
+  }
+};
   return (
     <ThemedView style={styles.container}>
       <Stack.Screen options={{ 

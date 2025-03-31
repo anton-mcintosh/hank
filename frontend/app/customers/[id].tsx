@@ -105,6 +105,7 @@ export default function CustomerDetailScreen() {
       <Stack.Screen 
         options={{ 
           title: `${customer.first_name} ${customer.last_name}`,
+          headerBackTitle: "Back",
           headerRight: () => (
             <TouchableOpacity onPress={() => router.push(`/customers/edit/${customerId}`)}>
               <ThemedText style={styles.editButton}>Edit</ThemedText>
