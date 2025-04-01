@@ -46,8 +46,8 @@ class VehicleBase(BaseModel):
     year: Optional[int] = None
     make: Optional[str] = None
     model: Optional[str] = None
-    cylinders: Optional[str] = None
     engine_code: Optional[str] = None
+    engine_size: Optional[str] = None
     mileage: Optional[int] = None
 
 
@@ -62,6 +62,8 @@ class VehicleUpdate(BaseModel):
     year: Optional[int] = None
     make: Optional[str] = None
     model: Optional[str] = None
+    engine_code: Optional[str] = None
+    engine_size: Optional[str] = None
     mileage: Optional[int] = None
 
     class Config:
