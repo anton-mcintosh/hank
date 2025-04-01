@@ -33,11 +33,12 @@ export interface Vehicle {
   id: string;
   customer_id: string;
   vin?: string;
+  plate?: string;
   year?: number;
   make?: string;
   model?: string;
-  cylinders?: string;
   engine_code?: string;
+  engine_size?: string;
   mileage?: number;
   created_at: string;
   updated_at: string;
@@ -55,9 +56,12 @@ export interface VehicleCreate {
 export interface VehicleUpdate {
   customer_id?: string;
   vin?: string;
+  plate?: string;
   year?: number;
   make?: string;
   model?: string;
+  engine_code?: string;
+  engine_size?: string;
   mileage?: number;
 }
 

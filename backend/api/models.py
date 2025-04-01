@@ -115,6 +115,7 @@ class WorkOrderUpdate(BaseModel):
     total_labor: Optional[float] = None
     total: Optional[float] = None
     status: Optional[str] = None
+    processing_notes: Optional[List[str]] = None
 
     class Config:
         extra = "ignore"

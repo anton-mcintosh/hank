@@ -335,11 +335,13 @@ async def process_uploads(
                         update_data["processing_notes"].append("Found existing vehicle")
                         vehicle_id = existing_vehicle.id
 
-                        # Update vehicle with new odometer reading if it's higher
+                        update_fields = {}
+                        if plate:
+                            update_fields["plate"] = plate
                         if odometer and int(odometer) > (existing_vehicle.mileage or 0):
-                            VehicleRepository.update(
-                                db, vehicle_id, {"mileage": int(odometer)}
-                            )
+                            update_fields["mileage"] = int(odometer)
+                        if update_fields:
+                            VehicleRepository.update(db, vehicle_id, update_fields)
                     else:
                         # Create new vehicle
                         vehicle_data = {
@@ -371,6 +373,7 @@ async def process_uploads(
                             "make": vehicle_info.get("make"),
                             "model": vehicle_info.get("model"),
                             "mileage": vehicle_info.get("mileage"),
+                            "plate": vehicle_info.get("plate"),
                         }
                     new_vehicle = VehicleRepository.create(db, vehicle_data)
                     vehicle_id = new_vehicle.id

@@ -74,6 +74,17 @@ class VehicleRepository:
         db.add(vehicle_db)
         db.commit()
         db.refresh(vehicle_db)
+        customer_id = vehicle_data.get("customer_id")
+        if customer_id:
+            customer = db.query(CustomerDB).filter(CustomerDB.id == customer_id).first()
+            if customer:
+                vehicles = customer.vehicles or []
+                if vehicle_db.id not in vehicles:
+                    vehicles.append(vehicle_db.id)
+                    customer.vehicles = vehicles
+                    customer.updated_at = datetime.now()
+                    db.commit()
+
         return vehicle_db
 
     @staticmethod
