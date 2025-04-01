@@ -18,6 +18,7 @@ export default function WorkorderDetailScreen() {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [autoRefreshTimer, setAutoRefreshTimer] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadWorkOrderData();
@@ -32,6 +33,33 @@ export default function WorkorderDetailScreen() {
       const workOrderData = await api.workorders.getById(workOrderId);
       setWorkOrder(workOrderData);
       
+      // Check if still processing and set up auto-refresh if needed
+    if (workOrderData.status === 'processing') {
+      // Clear any existing timer
+      if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+      }
+      
+      // Set up a new timer to refresh every 5 seconds
+      const timer = setTimeout(() => {
+        loadWorkOrderData();
+      }, 5000);
+      
+      setAutoRefreshTimer(timer);
+    } else {
+      // If no longer processing, clear any refresh timer
+      if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+        setAutoRefreshTimer(null);
+      }
+    }
+    
+    // Existing code for loading customer and vehicle...
+    if (workOrderData.customer) {
+      setCustomer(workOrderData.customer);
+    } else if (workOrderData.customer_id) {
+      // ...
+    }
       // If we have customer and vehicle info in the work order response, use it
       if (workOrderData.customer) {
         setCustomer(workOrderData.customer);
@@ -63,6 +91,35 @@ export default function WorkorderDetailScreen() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+  return () => {
+    if (autoRefreshTimer) {
+      clearTimeout(autoRefreshTimer);
+    }
+  };
+}, [autoRefreshTimer]);
+  const ProcessingStateIndicator = () => {
+  return (
+    <ThemedView 
+      style={styles.processingContainer}
+      lightColor="#f0f9ff"
+      darkColor="#1a365d"
+    >
+      <ActivityIndicator size="large" color="#0a7ea4" />
+      <ThemedText type="defaultSemiBold" style={styles.processingTitle}>
+        Processing Media Files
+      </ThemedText>
+      <ThemedText style={styles.processingText}>
+        We're analyzing your audio recordings and images to extract vehicle information 
+        and generate a work summary. This may take a minute or two.
+      </ThemedText>
+      <ThemedText style={styles.processingSubtext}>
+        You can continue using the app while processing completes. 
+        The page will update automatically when ready.
+      </ThemedText>
+    </ThemedView>
+  );
+};
 
   const handleDeleteWorkOrder = () => {
     Alert.alert(
@@ -199,6 +256,9 @@ export default function WorkorderDetailScreen() {
           )
         }} 
       />
+      {workOrder && workOrder.status === 'processing' && (
+        <ProcessingStateIndicator />
+      )}
       
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Status Badge */}
@@ -207,7 +267,7 @@ export default function WorkorderDetailScreen() {
             styles.statusBadge,
             { backgroundColor: getStatusColor(workOrder.status) }
           ]}>
-            {workOrder.status.toUpperCase()}
+            {workOrder.status === 'processing' ? 'PROCESSING' :workOrder.status.toUpperCase()}
           </ThemedText>
         </ThemedView>
         
@@ -471,6 +531,8 @@ function getStatusColor(status: string): string {
       return '#aaaaaa';
     case 'pending':
       return '#f5a623';
+    case 'processing':
+      return '#3498db';
     case 'processed':
       return '#4a90e2';
     case 'invoiced':
@@ -734,5 +796,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#31708f',
     fontStyle: 'italic',
+  },
+  processingContainer: {
+    padding: 16,
+    borderRadius: 8,
+    marginVertical: 16,
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#0a7ea4',
+  },
+  processingTitle: {
+    marginTop: 8,
+    marginBottom: 4,
+    color: '#0a7ea4',
+  },
+  processingText: {
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  processingSubtext: {
+    fontSize: 14,
+    opacity: 0.7,
+    textAlign: 'center',
   },
 });

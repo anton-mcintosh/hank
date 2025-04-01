@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
   StyleSheet, 
   ScrollView, 
@@ -8,7 +8,7 @@ import {
   View,
   Platform
 } from "react-native";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Audio } from 'expo-av';
@@ -36,26 +36,33 @@ export default function NewWorkOrderScreen() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingTimer, setRecordingTimer] = useState<NodeJS.Timeout | null>(null);
   const [step, setStep] = useState(1); // 1 = Select Customer, 2 = Collect Data
-
-  useEffect(() => {
-    loadCustomers();
+  
+    useFocusEffect(
+      useCallback(() => {
+        loadCustomers();
+    return () => {
+      // Cleanup function if needed
+    };
+  }, [])
+);
 
     // Request audio recording permissions
-    Audio.requestPermissionsAsync();
-    
-    // Request camera permissions
-    ImagePicker.requestCameraPermissionsAsync();
-    ImagePicker.requestMediaLibraryPermissionsAsync();
+    useEffect(() => {
+      Audio.requestPermissionsAsync();
+      
+      // Request camera permissions
+      ImagePicker.requestCameraPermissionsAsync();
+      ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    return () => {
-      // Clean up recording if component unmounts while recording
-      if (recording) {
-        stopRecording();
-      }
-      if (recordingTimer) {
-        clearInterval(recordingTimer);
-      }
-    };
+      return () => {
+        // Clean up recording if component unmounts while recording
+        if (recording) {
+          stopRecording();
+        }
+        if (recordingTimer) {
+          clearInterval(recordingTimer);
+        }
+      };
   }, []);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { 
   StyleSheet, 
   ScrollView, 
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import ThemedText from "../components/ThemedText";
@@ -41,9 +41,11 @@ export default function Index() {
   });
 
   // Load data when component mounts
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+      useFocusEffect(
+        useCallback(() => {
+          loadDashboardData();
+    }, [])
+  );
 
   // Function to load all dashboard data
   const loadDashboardData = async (isRefreshing = false) => {

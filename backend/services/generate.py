@@ -30,6 +30,7 @@ async def generate_work_summary(transcript, vehicle_info):
             4. A total estimate
             5. If there are recommendations made to the customer to take later, outline these because this is where the customer will read them.
             6. Shoot for 400 words
+            7. Don't repeat vehicle information in the summary like VIN or YMM.
             
             {vehicle_context}
             

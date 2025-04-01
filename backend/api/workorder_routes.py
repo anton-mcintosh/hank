@@ -42,7 +42,7 @@ class WorkOrderWithRelations(BaseModel):
     total_parts: float = 0
     total_labor: float = 0
     total: float = 0
-    status: str = "draft"
+    status: str = "processing"
     created_at: datetime
     updated_at: datetime
     customer: Customer = None
@@ -80,7 +80,14 @@ async def create_work_order(
             "id": order_id,
             "created_at": timestamp,
             "updated_at": timestamp,
-            "status": "pending",
+            "status": "processing",
+            "work_summary": "Processing audio...",
+            "line_items": [],
+            "total_parts": 0,
+            "total_labor": 0,
+            "total": 0,
+            "vehicle_info": {},
+            "processing_notes": ["Work order created, processing media files..."],
         }
 
         # If customer ID provided, verify customer exists
@@ -190,10 +197,13 @@ async def process_uploads(
             print(f"Work order {order_id} not found")
             return
 
+        WorkOrderRepository.update(
+            db, order_id, {"processing_notes": ["Processing started..."]}
+        )
         # Process vehicle information images
-        vehicle_info = {}
+        vehicle_info = work_order.vehicle_info or {}
         update_data = {
-            "processing_notes": [],
+            "processing_notes": work_order.processing_notes or [],
         }
 
         # Process VIN image
@@ -464,6 +474,12 @@ async def process_uploads(
             update_data["status"] = "needs_review"
         else:
             update_data["status"] = "processed"
+
+        if "status" not in update_data or update_data["status"] == "processing":
+            if vehicle_info and "vin" in vehicle_info:
+                update_data["status"] = "processed"
+            else:
+                update_data["status"] = "needs_review"
 
         WorkOrderRepository.update(db, order_id, update_data)
         print(f"Work order updated with status: {update_data['status']}")
