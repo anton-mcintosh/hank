@@ -10,6 +10,8 @@ import { Customer, Vehicle, WorkOrder, LineItem } from "../api/types";
 export default function WorkorderDetailScreen() {
   const { id } = useLocalSearchParams();
   const workOrderId = id as string;
+  const needsManualReview = workOrder?.status === 'needs_review';
+  const processingNotes = workOrder?.processing_notes || [];
   
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -232,38 +234,113 @@ export default function WorkorderDetailScreen() {
             )}
           </TouchableOpacity>
         </ThemedView>
+
+        {needsManualReview && (
+          <ThemedView 
+            style={styles.warningBanner}
+            lightColor="#FFF3CD"
+            darkColor="#554422"
+          >
+            <ThemedText type="defaultSemiBold" style={styles.warningTitle}>
+              Manual Review Required
+            </ThemedText>
+            <ThemedText style={styles.warningText}>
+              Some information couldn't be processed automatically. Please review and update the details as needed.
+            </ThemedText>
+            
+            {processingNotes.length > 0 && (
+              <ThemedView style={styles.notesContainer}>
+                <ThemedText type="defaultSemiBold">Processing Notes:</ThemedText>
+                {processingNotes.map((note, index) => (
+                  <ThemedText key={index} style={styles.noteItem}>• {note}</ThemedText>
+                ))}
+              </ThemedView>
+            )}
+            
+            <View style={styles.actionButtonsRow}>
+              {!vehicle && (
+                <TouchableOpacity 
+                  style={styles.addVehicleButton}
+                  onPress={() => router.push(`/vehicles/new?workOrderId=${workOrderId}&customerId=${workOrder.customer_id}`)}
+                >
+                  <ThemedText style={styles.actionButtonText}>Add Vehicle</ThemedText>
+                </TouchableOpacity>
+              )}
+              
+              <TouchableOpacity 
+                style={styles.warningActionButton}
+                onPress={() => router.push(`/workorders/edit/${workOrderId}`)}
+              >
+                <ThemedText style={styles.actionButtonText}>Edit Details</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </ThemedView>
+        )}
         
-        {/* Vehicle Section */}
-        <ThemedView 
-          style={styles.section}
-          lightColor="#ffffff"
-          darkColor="#333333"
-        >
-          <ThemedText type="subtitle">Vehicle Information</ThemedText>
-          
+       {/* Vehicle Section */}
+      <ThemedView 
+        style={styles.section}
+        lightColor="#ffffff"
+        darkColor="#333333"
+      >
+        <ThemedText type="subtitle">Vehicle Information</ThemedText>
+        
+        {!vehicle && vehicleInfo && Object.keys(vehicleInfo).length === 0 ? (
+          // No vehicle at all
+          <ThemedView style={styles.emptyInfoCard}>
+            <ThemedText style={styles.emptyText}>No vehicle information available</ThemedText>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={() => router.push(`/vehicles/new?workOrderId=${workOrderId}&customerId=${workOrder.customer_id}`)}
+            >
+              <ThemedText style={styles.addButtonText}>+ Add Vehicle</ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
+        ) : (
+          // Vehicle or vehicle_info exists
           <TouchableOpacity 
             style={styles.infoCard}
             onPress={() => vehicle && router.push(`/vehicles/${vehicle.id}`)}
             disabled={!vehicle}
           >
-            {vehicleYear && vehicleMake && vehicleModel ? (
+            <View style={styles.vehicleHeader}>
               <ThemedText type="defaultSemiBold">
-                {vehicleYear} {vehicleMake} {vehicleModel}
+                {vehicleYear ? vehicleYear : '----'} {vehicleMake ? vehicleMake : '----'} {vehicleModel ? vehicleModel : '----'}
               </ThemedText>
-            ) : (
-              <ThemedText type="defaultSemiBold">Vehicle Information</ThemedText>
-            )}
+              
+              {!vehicle && (
+                <TouchableOpacity 
+                  style={styles.miniEditButton}
+                  onPress={() => router.push(`/vehicles/new?workOrderId=${workOrderId}&customerId=${workOrder.customer_id}&prefill=true`)}
+                >
+                  <ThemedText style={styles.miniEditText}>Edit</ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
             
-            {vehicleVin && (
-              <ThemedText>VIN: {vehicleVin}</ThemedText>
-            )}
+            <View style={styles.vehicleDetailRow}>
+              <ThemedText style={styles.detailLabel}>VIN:</ThemedText>
+              <ThemedText style={!vehicleVin ? styles.missingValue : undefined}>
+                {vehicleVin || 'Not available'}
+              </ThemedText>
+            </View>
             
-            {vehicleMileage && (
-              <ThemedText>Mileage: {typeof vehicleMileage === 'number' ? vehicleMileage.toLocaleString() : vehicleMileage}</ThemedText>
+            <View style={styles.vehicleDetailRow}>
+              <ThemedText style={styles.detailLabel}>Mileage:</ThemedText>
+              <ThemedText style={!vehicleMileage ? styles.missingValue : undefined}>
+                {vehicleMileage ? (typeof vehicleMileage === 'number' ? vehicleMileage.toLocaleString() : vehicleMileage) : 'Not available'}
+              </ThemedText>
+            </View>
+            
+            {/* Info message if we have partial info but no vehicle record */}
+            {!vehicle && Object.keys(vehicleInfo).length > 0 && (
+              <ThemedText style={styles.infoMessage}>
+                This vehicle information is stored temporarily. Click Edit to create a permanent vehicle record.
+              </ThemedText>
             )}
           </TouchableOpacity>
-        </ThemedView>
-        
+        )}
+      </ThemedView> 
         {/* Work Summary Section */}
         <ThemedView 
           style={styles.section}
@@ -554,5 +631,108 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "600",
     fontSize: 16,
+  },
+  warningBanner: {
+    marginBottom: 20,
+    padding: 16,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f0ad4e',
+  },
+  warningTitle: {
+    marginBottom: 4,
+    color: '#8a6d3b',
+  },
+  warningText: {
+    color: '#8a6d3b',
+    marginBottom: 12,
+  },
+  notesContainer: {
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  noteItem: {
+    fontSize: 14,
+    marginTop: 4,
+    color: '#8a6d3b',
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  addVehicleButton: {
+    backgroundColor: '#5bc0de',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    flex: 1,
+    marginRight: 8,
+    alignItems: 'center',
+  },
+  warningActionButton: {
+    backgroundColor: '#0a7ea4',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    flex: 1,
+    alignItems: 'center',
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  emptyInfoCard: {
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 8,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+  },
+  addButton: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#0a7ea4',
+    borderRadius: 4,
+  },
+  addButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  vehicleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  miniEditButton: {
+    backgroundColor: '#0a7ea4',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+  },
+  miniEditText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  vehicleDetailRow: {
+    flexDirection: 'row',
+    marginVertical: 4,
+  },
+  detailLabel: {
+    fontWeight: '600',
+    width: 70,
+  },
+  missingValue: {
+    color: '#999',
+    fontStyle: 'italic',
+  },
+  infoMessage: {
+    marginTop: 12,
+    fontSize: 13,
+    color: '#31708f',
+    fontStyle: 'italic',
   },
 });

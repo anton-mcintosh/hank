@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { 
   StyleSheet, 
   FlatList, 
@@ -11,7 +11,7 @@ import {
   SafeAreaView,
   Alert
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import ThemedText from "../components/ThemedText";
@@ -27,9 +27,12 @@ export default function CustomersScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Load customers when the component mounts
-  useEffect(() => {
-    loadCustomers();
-  }, []);
+    useFocusEffect(
+      useCallback(() => {
+        console.log("Screen focused, loading customers...");
+        loadCustomers();
+    }, [])
+  );
 
   // Function to load customers from the API
   const loadCustomers = async (isRefreshing = false) => {

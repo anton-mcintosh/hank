@@ -47,6 +47,7 @@ const workordersApi = {
     // Add images
     if (data.vin_image) formData.append('vin_image', data.vin_image);
     if (data.odometer_image) formData.append('odometer_image', data.odometer_image);
+    if (data.plate_image) formData.append('plate_image', data.plate_image);
     
     // Use the upload method which is designed for FormData
     return api.upload<{ order_id: string; message: string }>('/work-orders/create', formData);

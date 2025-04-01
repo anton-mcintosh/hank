@@ -71,6 +71,7 @@ class WorkOrderDB(Base):
     total_labor = Column(Float, default=0.0)
     total = Column(Float, default=0.0)
     status = Column(String, default="draft")
+    processing_notes = Column(JSON, default=[])
     created_at = Column(TIMESTAMP, default=datetime.now)
     updated_at = Column(TIMESTAMP, default=datetime.now)
 

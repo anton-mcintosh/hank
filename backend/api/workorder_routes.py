@@ -17,7 +17,11 @@ from sqlalchemy.orm import Session
 
 from api.models import WorkOrder, Customer, Vehicle, WorkOrderUpdate
 from services.audio import transcribe_audio
-from services.image import extract_vin_from_image, read_odometer_image
+from services.image import (
+    extract_vin_from_image,
+    read_odometer_image,
+    read_plate_from_image,
+)
 from services.generate import generate_work_summary
 from services.vehicle_info import get_year_make_model
 from database.repos import WorkOrderRepository, CustomerRepository, VehicleRepository
@@ -56,6 +60,7 @@ async def create_work_order(
     audio_files: List[UploadFile] = File(None),
     vin_image: UploadFile = File(None),
     odometer_image: UploadFile = File(None),
+    plate_image: UploadFile = File(None),
     customer_id: Optional[str] = Form(None),
     customer_name: Optional[str] = Form(None),
     customer_phone: Optional[str] = Form(None),
@@ -123,6 +128,12 @@ async def create_work_order(
             odometer_content = await odometer_image.read()
             odometer_filename = odometer_image.filename
 
+        plate_content = None
+        plate_filename = None
+        if plate_image:
+            plate_content = await plate_image.read()
+            plate_filename = plate_image.filename
+
         # Process uploads in background with file contents instead of file objects
         background_tasks.add_task(
             process_uploads,
@@ -133,6 +144,8 @@ async def create_work_order(
             vin_filename,
             odometer_content,
             odometer_filename,
+            plate_content,
+            plate_filename,
             customer_id,
             customer_name,
             customer_phone,
@@ -157,6 +170,8 @@ async def process_uploads(
     vin_filename,
     odometer_content,
     odometer_filename,
+    plate_content,
+    plate_filename,
     customer_id,
     customer_name,
     customer_phone,
@@ -177,45 +192,97 @@ async def process_uploads(
 
         # Process vehicle information images
         vehicle_info = {}
-        update_data = {}
+        update_data = {
+            "processing_notes": [],
+        }
 
         # Process VIN image
         vin = None
         if vin_content:
-            # Ensure directory exists
-            os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
+            try:
+                # Ensure directory exists
+                os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
 
-            vin_path = os.path.join(
-                UPLOAD_DIR,
-                "images",
-                f"{order_id}_vin{os.path.splitext(vin_filename)[1]}",
-            )
-            print("Getting vin image")
-            async with aiofiles.open(vin_path, "wb") as f:
-                await f.write(vin_content)
+                vin_path = os.path.join(
+                    UPLOAD_DIR,
+                    "images",
+                    f"{order_id}_vin{os.path.splitext(vin_filename)[1]}",
+                )
+                print("Getting vin image")
+                async with aiofiles.open(vin_path, "wb") as f:
+                    await f.write(vin_content)
 
-            vin = await extract_vin_from_image(vin_path)
-            if vin:
-                vehicle_info["vin"] = vin
-                vehicle_info.update(await get_year_make_model(vin))
-                print("Vehicle Info with vin:", vehicle_info)
+                vin = await extract_vin_from_image(vin_path)
+                update_data["processing_notes"].append("VIN image processed")
+
+                if vin:
+                    vehicle_info["vin"] = vin
+                    vehicle_info.update(await get_year_make_model(vin))
+                    update_data["processing_notes"].append("VIN decoded successfully")
+                    print("Vehicle Info with vin:", vehicle_info)
+                else:
+                    update_data["processing_notes"].append(
+                        "VIN extraction failed - manual entry required"
+                    )
+
+            except Exception as e:
+                update_data["processing_notes"].append(f"VIN error: {str(e)[:100]}")
+                print(f"VIN processing error: {e}")
 
         # Process odometer image
         odometer = None
         if odometer_content:
-            os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
-            odo_path = os.path.join(
-                UPLOAD_DIR,
-                "images",
-                f"{order_id}_odo{os.path.splitext(odometer_filename)[1]}",
-            )
-            print("Getting odometer image")
-            async with aiofiles.open(odo_path, "wb") as f:
-                await f.write(odometer_content)
-            odometer = await read_odometer_image(odo_path)
-            if odometer:
-                vehicle_info["mileage"] = odometer
-                print("Vehicle Info with odometer:", vehicle_info)
+            try:
+                os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
+                odo_path = os.path.join(
+                    UPLOAD_DIR,
+                    "images",
+                    f"{order_id}_odo{os.path.splitext(odometer_filename)[1]}",
+                )
+                print("Getting odometer image")
+                async with aiofiles.open(odo_path, "wb") as f:
+                    await f.write(odometer_content)
+                odometer = await read_odometer_image(odo_path)
+                update_data["processing_notes"].append("Odometer image processed")
+
+                if odometer:
+                    vehicle_info["mileage"] = odometer
+                    print("Vehicle Info with odometer:", vehicle_info)
+                else:
+                    update_data["processing_notes"].append(
+                        "Odometer extraction failed - manual entry required"
+                    )
+                    print("Odometer extraction failed, manual entry required")
+
+            except Exception as e:
+                print(f"Odometer processing error: {e}")
+                update_data["processing_notes"].append(
+                    f"Odometer error: {str(e)[:100]}"
+                )
+
+        plate = None
+        if plate_content:
+            try:
+                os.makedirs(os.path.join(UPLOAD_DIR, "images"), exist_ok=True)
+                plate_path = os.path.join(
+                    UPLOAD_DIR,
+                    "images",
+                    f"{order_id}_plate{os.path.splitext(plate_filename)[1]}",
+                )
+                print("Getting plate image")
+                async with aiofiles.open(plate_path, "wb") as f:
+                    await f.write(plate_content)
+                plate = await read_plate_from_image(plate_path)
+                update_data["processing_notes"].append("Plate image processed")
+                if plate:
+                    vehicle_info["plate"] = plate
+                    update_data["processing_notes"].append("Plate decoded successfully")
+                    print("Vehicle Info with plate:", vehicle_info)
+
+            except Exception as e:
+                print(f"Plate processing error: {e}")
+                update_data["processing_notes"].append(f"Plate error: {str(e)[:100]}")
+                # If plate extraction fails, we can still proceed without it
 
         # Process customer info if we have it
         if not customer_id and (customer_name or customer_phone or customer_email):
@@ -253,36 +320,69 @@ async def process_uploads(
                 customer_id = customer.id
                 print(f"Created new customer: {customer}")
 
+        if vehicle_info:
+            update_data["vehicle_info"] = vehicle_info
+            update_data["processing_notes"].append("Saved partial vehicle info")
         # Process vehicle info if we have it
         vehicle_id = work_order.vehicle_id
-        if not vehicle_id and vin and customer_id:
-            # Check if this VIN is already in our database
-            print("Searching for existing vehicle")
-            existing_vehicle = VehicleRepository.get_by_vin(db, vin)
+        if not vehicle_id and customer_id:
+            try:
+                if vin:
+                    existing_vehicle = VehicleRepository.get_by_vin(db, vin)
 
-            if existing_vehicle:
-                print(f"Found existing vehicle: {existing_vehicle}")
-                # Use existing vehicle
-                vehicle_id = existing_vehicle.id
+                    if existing_vehicle:
+                        print(f"Found existing vehicle: {existing_vehicle}")
+                        update_data["processing_notes"].append("Found existing vehicle")
+                        vehicle_id = existing_vehicle.id
 
-                # Update vehicle with new odometer reading if it's higher
-                if odometer and int(odometer) > (existing_vehicle.mileage or 0):
-                    VehicleRepository.update(db, vehicle_id, {"mileage": int(odometer)})
-            else:
-                # Create new vehicle
-                vehicle_data = {
-                    "id": str(uuid.uuid4()),
-                    "customer_id": customer_id,
-                    "vin": vin,
-                    "year": vehicle_info.get("year"),
-                    "make": vehicle_info.get("make"),
-                    "model": vehicle_info.get("model"),
-                    "mileage": odometer,
-                }
+                        # Update vehicle with new odometer reading if it's higher
+                        if odometer and int(odometer) > (existing_vehicle.mileage or 0):
+                            VehicleRepository.update(
+                                db, vehicle_id, {"mileage": int(odometer)}
+                            )
+                    else:
+                        # Create new vehicle
+                        vehicle_data = {
+                            "id": str(uuid.uuid4()),
+                            "customer_id": customer_id,
+                            "vin": vin,
+                            "year": vehicle_info.get("year"),
+                            "make": vehicle_info.get("make"),
+                            "model": vehicle_info.get("model"),
+                            "mileage": odometer,
+                            "plate": plate,
+                        }
 
-                new_vehicle = VehicleRepository.create(db, vehicle_data)
-                vehicle_id = new_vehicle.id
-                print(f"Created new vehicle: {new_vehicle}")
+                        new_vehicle = VehicleRepository.create(db, vehicle_data)
+                        vehicle_id = new_vehicle.id
+                        update_data["processing_notes"].append(
+                            "Created new vehicle with partial info"
+                        )
+                        print(f"Created new vehicle: {new_vehicle}")
+                else:
+                    # placeholder vehicle with minimal info
+                    if vehicle_info and (
+                        vehicle_info.get("make") or vehicle_info.get("model")
+                    ):
+                        vehicle_data = {
+                            "id": str(uuid.uuid4()),
+                            "customer_id": customer_id,
+                            "year": vehicle_info.get("year"),
+                            "make": vehicle_info.get("make"),
+                            "model": vehicle_info.get("model"),
+                            "mileage": vehicle_info.get("mileage"),
+                        }
+                    new_vehicle = VehicleRepository.create(db, vehicle_data)
+                    vehicle_id = new_vehicle.id
+                    update_data["processing_notes"].append(
+                        "Created new vehicle with partial info"
+                    )
+            except Exception as e:
+                print(f"Error creating vehicle: {e}")
+                update_data["processing_notes"].append(
+                    f"Vehicle creation error: {str(e)[:100]}"
+                )
+                # If there's an error, we can still proceed without vehicle ID
 
         # Update work order with customer and vehicle IDs
         if customer_id or vehicle_id:
@@ -293,6 +393,7 @@ async def process_uploads(
                 update_fields["vehicle_id"] = vehicle_id
 
             WorkOrderRepository.update(db, order_id, update_fields)
+            update_data["processing_notes"].append("Updated work order references")
 
         # Process audio files
         all_transcripts = []
@@ -356,19 +457,27 @@ async def process_uploads(
             if vehicle_info:
                 update_data["status"] = "processed"
 
-        # Update work order in database
-        if update_data:
-            WorkOrderRepository.update(db, order_id, update_data)
+        if "vin" not in vehicle_info or not vehicle_id:
+            update_data["status"] = "needs_review"
+        else:
+            update_data["status"] = "processed"
 
-        print(f"Workorder complete: {update_data}")
-        print(f"")
+        WorkOrderRepository.update(db, order_id, update_data)
+        print(f"Work order updated with status: {update_data['status']}")
 
     except Exception as e:
         print(f"Error processing uploads: {e}")
         # Update work order status to error
         if "db" in locals():
             try:
-                WorkOrderRepository.update(db, order_id, {"status": "error"})
+                WorkOrderRepository.update(
+                    db,
+                    order_id,
+                    {
+                        "status": "needs_review",
+                        "processing_notes": [f"Processing error: {str(e)}"],
+                    },
+                )
             except Exception as update_error:
                 print(f"Error updating work order status: {update_error}")
     finally:

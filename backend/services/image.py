@@ -2,6 +2,7 @@ import httpx
 import json
 import os
 import base64
+import asyncio
 from dotenv import load_dotenv, dotenv_values
 
 load_dotenv()
@@ -14,62 +15,80 @@ print("Api key", OPENAI_API_KEY)
 
 async def extract_vin_from_image(file_path):
     """Extract VIN from door placard image using Vision API"""
-    try:
-        async with httpx.AsyncClient() as client:
-            with open(file_path, "rb") as f:
-                image_content = base64.b64encode(f.read()).decode("utf-8")
+    retry_count = 0
+    last_error = None
+    while retry_count < 3:
+        try:
+            async with httpx.AsyncClient() as client:
+                with open(file_path, "rb") as f:
+                    image_content = base64.b64encode(f.read()).decode("utf-8")
 
-            # Using OpenAI Vision for image analysis
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {VISION_API_KEY}",
-            }
-            payload = {
-                "model": "gpt-4o",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "Extract the VIN number from this door placard image. Only return the VIN, nothing else.",
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_content}"
+                # Using OpenAI Vision for image analysis
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {VISION_API_KEY}",
+                }
+                payload = {
+                    "model": "gpt-4o",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Extract the VIN number from this door placard image. Only return the VIN, nothing else.",
                                 },
-                            },
-                        ],
-                    }
-                ],
-                "max_tokens": 100,
-            }
-            response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=30.0,
-            )
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{image_content}"
+                                    },
+                                },
+                            ],
+                        }
+                    ],
+                    "max_tokens": 100,
+                }
+                response = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=30.0,
+                )
 
-            if response.status_code == 200:
-                vin_text = response.json()["choices"][0]["message"]["content"].strip()
-                print("VIN text:", vin_text)
-                # Typical VIN is 17 alphanumeric characters
-                # Extract just the VIN using simple validation
-                import re
+                if response.status_code == 200:
+                    vin_text = response.json()["choices"][0]["message"][
+                        "content"
+                    ].strip()
+                    print("VIN text:", vin_text)
+                    # Typical VIN is 17 alphanumeric characters
+                    # Extract just the VIN using simple validation
+                    import re
 
-                vin_match = re.search(r"[A-HJ-NPR-Z0-9]{17}", vin_text)
-                print("VIN match:", vin_match)
-                if vin_match:
-                    return vin_match.group(0)
-                return vin_text
-            else:
-                print(f"Vision API error: {response.text}")
-                return ""
-    except Exception as e:
-        print(f"Error processing image: {e}")
-        return ""
+                    vin_match = re.search(r"[A-HJ-NPR-Z0-9]{17}", vin_text)
+                    print("VIN match:", vin_match)
+                    if vin_match:
+                        return vin_match.group(0)
+                    retry_count += 1
+                    if retry_count < 3:
+                        print(f"No valid VIN found, retrying... ({retry_count}/3)")
+                        await asyncio.sleep(2)
+                    continue
+                else:
+                    print(f"Vision API error: {response.text}")
+                    retry_count += 1
+                    if retry_count < 3:
+                        await asyncio.sleep(2)
+                    continue
+        except Exception as e:
+            last_error = e
+            print(f"Extraction attempt {retry_count + 1} failed: {e}")
+            retry_count += 1
+            if retry_count < 3:
+                await asyncio.sleep(2)
+
+    print(f"VIN extraction failed after 3 attempts. Last error: {last_error}")
+    return ""
 
 
 async def read_odometer_image(file_path):
@@ -134,7 +153,7 @@ async def read_odometer_image(file_path):
         return ""
 
 
-async def extract_license_from_image(file_path):
+async def read_plate_from_image(file_path):
     """Extract License Plate Number from image using Vision API"""
     try:
         async with httpx.AsyncClient() as client:

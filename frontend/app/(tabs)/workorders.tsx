@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { 
   StyleSheet, 
   FlatList, 
@@ -10,7 +10,7 @@ import {
   SafeAreaView,
   Dimensions
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import ThemedText from "../components/ThemedText";
 import ThemedView from "../components/ThemedView";
@@ -28,9 +28,12 @@ export default function WorkordersScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Load work orders when the component mounts
-  useEffect(() => {
-    loadWorkorders();
-  }, []);
+    useFocusEffect(
+      useCallback(() => {
+        console.log("Screen focused, loading work orders...");
+        loadWorkorders();
+    }, [])
+  );
 
   // Function to load work orders from the API
   const loadWorkorders = async (isRefreshing = false) => {
