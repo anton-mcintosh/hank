@@ -3,6 +3,46 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
 
+class UserBase(BaseModel):
+    username: str
+    email: str
+
+
+class UserCreate(UserBase):
+    password: str
+
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
+
+
+class User(UserBase):
+    id: str
+    is_active: bool
+    is_admin: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    user_id: str
+    username: str
+    is_admin: bool
+
+
 class CustomerBase(BaseModel):
     first_name: str
     last_name: str

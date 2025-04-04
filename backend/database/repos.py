@@ -3,7 +3,65 @@ import uuid
 from sqlalchemy.orm import Session
 from typing import Dict, Any, List, Optional
 
-from .db import CustomerDB, VehicleDB, WorkOrderDB
+from .db import UserDB, CustomerDB, VehicleDB, WorkOrderDB
+
+
+class UserRepository:
+    @staticmethod
+    def create(db: Session, user_data: Dict[str, Any]) -> UserDB:
+        if "id" not in user_data:
+            user_data["id"] = str(uuid.uuid4())
+
+        user_db = UserDB(**user_data)
+        db.add(user_db)
+        db.commit()
+        db.refresh(user_db)
+        return user_db
+
+    @staticmethod
+    def update(
+        db: Session, user_id: str, user_data: Dict[str, Any]
+    ) -> Optional[UserDB]:
+        user = db.query(UserDB).filter(UserDB.id == user_id).first()
+        if not user:
+            return None
+
+        # Update fields
+        for key, value in user_data.items():
+            setattr(user, key, value)
+
+        # Always update the updated_at timestamp
+        user.updated_at = datetime.now()
+
+        db.commit()
+        db.refresh(user)
+        return user
+
+    @staticmethod
+    def delete(db: Session, user_id: str) -> bool:
+        user = db.query(UserDB).filter(UserDB.id == user_id).first()
+        if not user:
+            return False
+
+        db.delete(user)
+        db.commit()
+        return True
+
+    @staticmethod
+    def get_by_id(db: Session, user_id: str) -> Optional[UserDB]:
+        return db.query(UserDB).filter(UserDB.id == user_id).first()
+
+    @staticmethod
+    def get_by_username(db: Session, username: str) -> Optional[UserDB]:
+        return db.query(UserDB).filter(UserDB.username == username).first()
+
+    @staticmethod
+    def get_by_email(db: Session, email: str) -> Optional[UserDB]:
+        return db.query(UserDB).filter(UserDB.email == email).first()
+
+    @staticmethod
+    def get_all(db: Session) -> List[UserDB]:
+        return db.query(UserDB).all()
 
 
 class CustomerRepository:

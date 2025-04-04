@@ -3,6 +3,7 @@ from sqlalchemy import (
     Column,
     String,
     Float,
+    Boolean,
     JSON,
     TIMESTAMP,
     MetaData,
@@ -24,6 +25,19 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+
+class UserDB(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, index=True)
+    username = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
+    created_at = Column(TIMESTAMP, default=datetime.now)
+    updated_at = Column(TIMESTAMP, default=datetime.now)
 
 
 class CustomerDB(Base):

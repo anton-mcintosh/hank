@@ -1,5 +1,18 @@
 // API client for making HTTP requests to the backend
 import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+
+export const getAuthHeader = async (): Promise<Record<string, string>> => {
+  try {
+    const token = await SecureStore.getItemAsync('userToken');
+    if (token) {
+      return { 'Authorization': `Bearer ${token}` };
+    }
+  } catch (error) {
+    console.error('Error getting token:', error);
+  }
+  return {};
+};
 
 // Base URL configuration - adjust this based on your environment
 const API_URL = {
@@ -35,7 +48,6 @@ export class ApiError extends Error {
   }
 }
 
-// Basic fetch wrapper with error handling
 export const apiRequest = async <T>(
   endpoint: string,
   method: string = 'GET',
@@ -44,8 +56,12 @@ export const apiRequest = async <T>(
 ): Promise<T> => {
   const url = `${getBaseUrl()}${endpoint}`;
   
+  // Get auth headers
+  const authHeader = await getAuthHeader();
+  
   const headers = {
     ...defaultHeaders,
+    ...authHeader,
     ...customHeaders,
   };
 

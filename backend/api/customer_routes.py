@@ -6,10 +6,11 @@ from datetime import datetime
 from fastapi import UploadFile, File
 import aiofiles
 from api.models import Customer, CustomerCreate, CustomerUpdate, CustomerBase
+from api.auth_dependencies import get_current_user
 from database.db import get_db
 from database.repos import CustomerRepository, VehicleRepository
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.post("/extract-customer-info", response_model=CustomerBase)
@@ -193,7 +194,11 @@ async def delete_customer(customer_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/customers/{customer_id}", response_model=Customer)
-async def get_customer(customer_id: str, db: Session = Depends(get_db)):
+async def get_customer(
+    customer_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Get a customer by ID"""
     customer = CustomerRepository.get_by_id(db, customer_id)
     if not customer:

@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
+from api.auth_routes import router as auth_router
 from api.workorder_routes import router as workorder_router
 from api.customer_routes import router as customer_router
 from api.vehicle_routes import router as vehicle_router
@@ -43,6 +44,7 @@ app.add_middleware(
 # Initialize database
 init_db()
 
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(workorder_router, prefix="/api/v1", tags=["work orders"])
 app.include_router(customer_router, prefix="/api/v1", tags=["customers"])
 app.include_router(vehicle_router, prefix="/api/v1", tags=["vehicles"])
